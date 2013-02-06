@@ -1,0 +1,4 @@
+nose==1.2.1
+requests==1.1.0
+twitter==1.9.1
+wsgiref==0.1.2

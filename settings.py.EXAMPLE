@@ -1,0 +1,4 @@
+LOG_FILE = "./logs/bot.log"
+SINCE_ID_FILE = './since_id.txt'
+
+QUOTATION_URL = 'https://nameless-retreat-9351.herokuapp.com/api/v1/quotations/?format=json&random=true&limit=1'

@@ -1,6 +1,6 @@
 import unittest
 
-from twitter_bot import tokenize
+from twitterbot.twitter_bot import tokenize
 
 
 class TestTwitterBot(unittest.TestCase):

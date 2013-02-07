@@ -1,15 +1,15 @@
 import logging
 import os
-import redis
-import requests
 import string
-from twitter import Twitter
-from twitter.oauth import OAuth
 import urlparse
 
-import settings
+import redis
+import requests
+from twitter import Twitter
+from twitter.oauth import OAuth
 
-logging.basicConfig(filename=settings.LOG_FILE, level=logging.DEBUG)
+
+logging.basicConfig(filename=os.environ.get('LOG_FILE'), level=logging.DEBUG)
 
 
 def tokenize(message, message_length, mentioner=None):
@@ -64,6 +64,7 @@ def quotation_main():
     OAUTH_SECRET = os.environ.get('TWITTER_OAUTH_SECRET')
     CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
     CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET')
+    BASE_URL = os.environ.get('QUOTATION_URL')
 
     twitter = Twitter(auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
                                  CONSUMER_KEY, CONSUMER_SECRET))
@@ -89,7 +90,7 @@ def quotation_main():
         for hashtag in mention['entities']['hashtags']:
             query_args.append('text__contains=%s' % hashtag['text'])
 
-        url = settings.QUOTATION_URL + '&' + string.join(query_args, '&')
+        url = BASE_URL + '&' + string.join(query_args, '&')
         logging.debug("Trying URL: %s" % url)
         result = requests.get(url)
         logging.debug("Requested quote, status code=%s" % result.status_code)

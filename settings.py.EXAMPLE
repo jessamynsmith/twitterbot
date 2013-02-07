@@ -1,3 +1,0 @@
-LOG_FILE = "./logs/bot.log"
-
-QUOTATION_URL = 'https://underquoted.herokuapp.com/api/v1/quotations/?format=json&random=true&limit=1'

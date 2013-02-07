@@ -1,9 +1,11 @@
 import logging
 import os
+import redis
 import requests
 import string
 from twitter import Twitter
 from twitter.oauth import OAuth
+import urlparse
 
 import settings
 
@@ -66,9 +68,9 @@ def quotation_main():
     twitter = Twitter(auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
                                  CONSUMER_KEY, CONSUMER_SECRET))
 
-    since_id_file = open(settings.SINCE_ID_FILE)
-    since_id = since_id_file.readline()
-    since_id_file.close()
+    url = urlparse.urlparse(os.environ.get('REDISCLOUD_URL'))
+    uq_redis = redis.Redis(host=url.hostname, port=url.port, password=url.password)
+    since_id = uq_redis.get('since_id')
     logging.debug("Retrieved since_id: %s" % since_id)
 
     kwargs = {}
@@ -104,9 +106,7 @@ def quotation_main():
 
     if mention_id:
         logging.debug("Attempting to store since_id: %s" % mention_id)
-        since_id_file = open(settings.SINCE_ID_FILE, 'w')
-        since_id_file.write('%s\n' % mention_id)
-        since_id_file.close()
+        uq_redis.set('since_id', mention_id)
 
 
 if __name__ == "__main__":

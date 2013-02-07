@@ -1,20 +1,23 @@
 import unittest
 
-from twitterbot.twitter_bot import tokenize
+from twitterbot.twitter_bot import TwitterBot
 
 
 class TestTwitterBot(unittest.TestCase):
 
     MESSAGE = "You don't manage people, you manage things. You lead people. - Grace Hopper"
 
+    def setUp(self):
+        self.bot = TwitterBot(redis_url='redis://:@localhost:6379/10')
+
     def test_tokenize_short(self):
-        messages = tokenize(self.MESSAGE, 80)
+        messages = self.bot.tokenize(self.MESSAGE, 80)
 
         self.assertEqual(1, len(messages))
         self.assertEqual(self.MESSAGE, messages[0])
 
     def test_tokenize_too_long(self):
-        messages = tokenize(self.MESSAGE, 50)
+        messages = self.bot.tokenize(self.MESSAGE, 50)
 
         self.assertEqual(2, len(messages))
         for message in messages:
@@ -23,7 +26,7 @@ class TestTwitterBot(unittest.TestCase):
         self.assertEqual("... You lead people. - Grace Hopper", messages[1])
 
     def test_tokenize_much_too_long(self):
-        messages = tokenize(self.MESSAGE, 30)
+        messages = self.bot.tokenize(self.MESSAGE, 30)
 
         self.assertEqual(4, len(messages))
         for message in messages:
@@ -34,13 +37,13 @@ class TestTwitterBot(unittest.TestCase):
         self.assertEqual("... Hopper", messages[3])
 
     def test_tokenize_short_with_mention(self):
-        messages = tokenize(self.MESSAGE, 80, '@js')
+        messages = self.bot.tokenize(self.MESSAGE, 80, '@js')
 
         self.assertEqual(1, len(messages))
         self.assertEqual('@js %s' % self.MESSAGE, messages[0])
 
     def test_tokenize_much_too_long_with_mention(self):
-        messages = tokenize(self.MESSAGE, 40, '@js')
+        messages = self.bot.tokenize(self.MESSAGE, 40, '@js')
 
         self.assertEqual(4, len(messages))
         for message in messages:

@@ -1,7 +1,6 @@
 import logging
 import os
 import string
-import urlparse
 
 import redis
 import requests
@@ -15,7 +14,7 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
 
 class TwitterBot(object):
 
-    def __init__(self):
+    def __init__(self, redis_url=None):
         OAUTH_TOKEN = os.environ.get('TWITTER_OAUTH_TOKEN')
         OAUTH_SECRET = os.environ.get('TWITTER_OAUTH_SECRET')
         CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
@@ -26,9 +25,9 @@ class TwitterBot(object):
         self.twitter = Twitter(auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
                                           CONSUMER_KEY, CONSUMER_SECRET))
 
-        url = urlparse.urlparse(os.environ.get('REDISCLOUD_URL'))
-        self.redis = redis.Redis(host=url.hostname, port=url.port,
-                                 password=url.password)
+        if not redis_url:
+            redis_url = os.environ.get('REDISCLOUD_URL')
+        self.redis = redis.Redis.from_url(redis_url)
 
     def tokenize(self, message, message_length, mentioner=None):
         if mentioner:

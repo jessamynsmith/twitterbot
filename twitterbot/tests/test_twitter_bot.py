@@ -14,6 +14,10 @@ class TestTwitterBot(unittest.TestCase):
         self.bot = TwitterBot(redis_url='redis://:@localhost:6379/10',
                               quotation_url='http://invalid/quotation/?')
 
+    def tearDown(self):
+        if self.bot.redis.get('since_id'):
+            self.bot.redis.delete('since_id')
+
     def test_tokenize_short(self):
         messages = self.bot.tokenize(self.MESSAGE, 80)
 
@@ -161,3 +165,70 @@ class TestTwitterBot(unittest.TestCase):
         self.assertEqual(187, result)
         mock_statuses.update.assert_called_with(
             status='Here I stay. - Henrietta', in_reply_to_status_id=None)
+
+
+class TestReplyToMentions(unittest.TestCase):
+
+    def setUp(self):
+        self.bot = TwitterBot(redis_url='redis://:@localhost:6379/10',
+                              quotation_url='http://invalid/quotation/?')
+        self.bot.twitter.statuses = Mock()
+        self.bot.retrieve_quotation = Mock(return_value="'Tis better")
+        self.bot.post_quotation = Mock()
+
+    def tearDown(self):
+        if self.bot.redis.get('since_id'):
+            self.bot.redis.delete('since_id')
+
+    def test_reply_to_mentions_no_mentions_no_since_id(self):
+        self.bot.twitter.statuses.mentions_timeline.return_value = []
+
+        result = self.bot.reply_to_mentions()
+
+        self.assertEqual(0, result)
+        self.bot.twitter.statuses.mentions_timeline.assert_called_with()
+
+    def test_reply_to_mentions_no_mentions_with_since_id(self):
+        self.bot.twitter.statuses.mentions_timeline.return_value = []
+        self.bot.redis.set('since_id', '3')
+
+        result = self.bot.reply_to_mentions()
+
+        self.assertEqual(0, result)
+        self.bot.twitter.statuses.mentions_timeline.assert_called_with(
+            since_id='3')
+
+    def test_reply_to_mentions_error(self):
+        self.bot.twitter.statuses.mentions_timeline.return_value = [
+            {'id': '123',
+             'user': {'screen_name': 'jessamyn'},
+             'entities': {'hashtags': [{'text': 'love'}]}}
+        ]
+        self.bot.post_quotation.return_value = 187
+
+        result = self.bot.reply_to_mentions()
+
+        self.assertEqual(1, result)
+        self.bot.twitter.statuses.mentions_timeline.assert_called_with()
+        self.assertEqual(11, len(self.bot.post_quotation.mock_calls))
+        self.assertEqual(call("'Tis better", '@jessamyn', '123'),
+                         self.bot.post_quotation.mock_calls[0])
+        self.assertEqual(call('No quotations found matching #love', '@jessamyn', '123'),
+                         self.bot.post_quotation.mock_calls[10])
+        self.assertEqual('123', self.bot.redis.get('since_id'))
+
+    def test_reply_to_mentions_success(self):
+        self.bot.twitter.statuses.mentions_timeline.return_value = [
+            {'id': '123',
+             'user': {'screen_name': 'jessamyn'},
+             'entities': {'hashtags': [{'text': 'love'}]}}
+            ]
+        self.bot.post_quotation.return_value = 0
+
+        result = self.bot.reply_to_mentions()
+
+        self.assertEqual(1, result)
+        self.bot.twitter.statuses.mentions_timeline.assert_called_with()
+        expected_calls = [call("'Tis better", '@jessamyn', '123')]
+        self.assertEqual(expected_calls, self.bot.post_quotation.mock_calls)
+        self.assertEqual('123', self.bot.redis.get('since_id'))

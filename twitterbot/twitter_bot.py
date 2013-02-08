@@ -121,6 +121,7 @@ class TwitterBot(object):
         mentions = self.twitter.statuses.mentions_timeline(**kwargs)
         logging.info("Retrieved %s mentions" % len(mentions))
 
+        mentions_processed = 0
         for mention in mentions:
             mention_id = mention['id']
             mentioner = '@%s' % mention['user']['screen_name']
@@ -144,8 +145,11 @@ class TwitterBot(object):
                                                  mention_id)
                 tries += 1
 
+            mentions_processed += 1
             logging.info("Attempting to store since_id: %s" % mention_id)
             self.redis.set('since_id', mention_id)
+
+        return mentions_processed
 
     def post_message(self):
             quotation = self.retrieve_quotation()

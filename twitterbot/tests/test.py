@@ -1,5 +1,6 @@
 import unittest
-from mock import patch, Mock
+from mock import call, patch, Mock
+from twitter.api import TwitterHTTPError
 
 from twitterbot.twitter_bot import TwitterBot
 
@@ -7,6 +8,7 @@ from twitterbot.twitter_bot import TwitterBot
 class TestTwitterBot(unittest.TestCase):
 
     MESSAGE = "You don't manage people, you manage things. You lead people. - Grace Hopper"
+    LONG_MESSAGE = "I have loved men and women in my life; I've been labeled 'the bisexual defector' in print. Want to know another secret? I'm even ambidextrous. I don't like labels. Just call me Martina. - Martina Navratilova"
 
     def setUp(self):
         self.bot = TwitterBot(redis_url='redis://:@localhost:6379/10',
@@ -83,14 +85,14 @@ class TestTwitterBot(unittest.TestCase):
     def test_retrieve_quotation_with_hashtags_success(self, mock_get):
         mock_result = Mock(status_code=200)
         mock_result.json.return_value = {'objects': [{
-            'text': 'Here I stay',
+            'text': 'Here I stay.',
             'author': {'name': 'Henrietta'}
         }]}
         mock_get.return_value = mock_result
 
         quotation = self.bot.retrieve_quotation(['stay'])
 
-        self.assertEqual('Here I stay - Henrietta', quotation)
+        self.assertEqual('Here I stay. - Henrietta', quotation)
         mock_get.assert_called_with('http://invalid/quotation/?&text__icontains=stay')
 
     @patch('requests.get')
@@ -121,3 +123,41 @@ class TestTwitterBot(unittest.TestCase):
 
         self.assertEqual('No quotations found matching #love #hate', quotation)
         mock_get.assert_called_with('http://invalid/quotation/?&text__icontains=love&text__icontains=hate')
+
+    def test_post_quotation_short_no_mention(self):
+        mock_statuses = Mock()
+        self.bot.twitter.statuses = mock_statuses
+
+        result = self.bot.post_quotation('Here I stay. - Henrietta')
+
+        self.assertEqual(0, result)
+        mock_statuses.update.assert_called_with(
+            status='Here I stay. - Henrietta', in_reply_to_status_id=None)
+
+    def test_post_quotation_too_long_with_mention(self):
+        mock_statuses = Mock()
+        self.bot.twitter.statuses = mock_statuses
+
+        result = self.bot.post_quotation(self.LONG_MESSAGE,
+                                         mentioner='@jessamyn', mention_id=2)
+
+        self.assertEqual(0, result)
+        expected_calls = [
+            call(status="@jessamyn I have loved men and women in my life; I've been labeled 'the bisexual defector' in print. Want to know another ...", in_reply_to_status_id=2),
+            call(status="@jessamyn ... secret? I'm even ambidextrous. I don't like labels. Just call me Martina. - Martina Navratilova", in_reply_to_status_id=2)]
+        self.assertEqual(expected_calls, mock_statuses.update.mock_calls)
+
+    def test_post_quotation_unknown_error(self):
+        error = TwitterHTTPError(
+            Mock(headers={'Content-Encoding': ''}), '', '', [])
+        error.response_data = {'errors': [{'code': 187}]}
+        mock_update = Mock(side_effect=error)
+        mock_statuses = Mock()
+        mock_statuses.update = mock_update
+        self.bot.twitter.statuses = mock_statuses
+
+        result = self.bot.post_quotation('Here I stay. - Henrietta')
+
+        self.assertEqual(187, result)
+        mock_statuses.update.assert_called_with(
+            status='Here I stay. - Henrietta', in_reply_to_status_id=None)

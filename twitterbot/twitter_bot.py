@@ -5,8 +5,8 @@ import string
 import redis
 import requests
 from twitter import Twitter
-import twitter
 from twitter.oauth import OAuth
+from twitter.api import TwitterHTTPError
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                     level=logging.INFO)
@@ -105,7 +105,7 @@ class TwitterBot(object):
             try:
                 self.twitter.statuses.update(status=message,
                                              in_reply_to_status_id=mention_id)
-            except twitter.api.TwitterHTTPError as e:
+            except TwitterHTTPError as e:
                 code = e.response_data['errors'][0]['code']
                 break
         return code

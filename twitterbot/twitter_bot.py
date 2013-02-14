@@ -28,7 +28,7 @@ class TwitterBot(object):
                                           CONSUMER_KEY, CONSUMER_SECRET))
 
         if not redis_url:
-            redis_url = os.environ.get('REDISCLOUD_URL')
+            redis_url = os.getenv('REDISTOGO_URL')
         self.redis = redis.Redis.from_url(redis_url)
 
     def tokenize(self, message, message_length, mentioner=None):

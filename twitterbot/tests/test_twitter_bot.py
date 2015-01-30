@@ -1,5 +1,5 @@
 import unittest
-from mock import call, patch, Mock
+from mock import call, patch, MagicMock
 from twitter.api import TwitterHTTPError
 
 from twitterbot.twitter_bot import TwitterBot
@@ -8,15 +8,13 @@ from twitterbot.twitter_bot import TwitterBot
 class TestTwitterBot(unittest.TestCase):
 
     MESSAGE = "You don't manage people, you manage things. You lead people. - Grace Hopper"
-    LONG_MESSAGE = "I have loved men and women in my life; I've been labeled 'the bisexual defector' in print. Want to know another secret? I'm even ambidextrous. I don't like labels. Just call me Martina. - Martina Navratilova"
+    LONG_MESSAGE = ("I have loved men and women in my life; I've been labeled 'the bisexual "
+                    "defector' in print. Want to know another secret? I'm even ambidextrous. "
+                    "I don't like labels. Just call me Martina. - Martina Navratilova")
 
     def setUp(self):
         self.bot = TwitterBot(redis_url='redis://:@localhost:6379/10',
                               quotation_url='http://invalid/quotation/?')
-
-    def tearDown(self):
-        if self.bot.redis.get('since_id'):
-            self.bot.redis.delete('since_id')
 
     def test_tokenize_short(self):
         messages = self.bot.tokenize(self.MESSAGE, 80)
@@ -73,7 +71,7 @@ class TestTwitterBot(unittest.TestCase):
 
     @patch('requests.get')
     def test_retrieve_quotation_success(self, mock_get):
-        mock_result = Mock(status_code=200)
+        mock_result = MagicMock(status_code=200)
         mock_result.json.return_value = {'objects': [{
             'text': 'Here I stay',
             'author': {'name': 'Henrietta'}
@@ -87,7 +85,7 @@ class TestTwitterBot(unittest.TestCase):
 
     @patch('requests.get')
     def test_retrieve_quotation_with_hashtags_success(self, mock_get):
-        mock_result = Mock(status_code=200)
+        mock_result = MagicMock(status_code=200)
         mock_result.json.return_value = {'objects': [{
             'text': 'Here I stay.',
             'author': {'name': 'Henrietta'}
@@ -101,7 +99,7 @@ class TestTwitterBot(unittest.TestCase):
 
     @patch('requests.get')
     def test_retrieve_quotation_no_quotations(self, mock_get):
-        mock_result = Mock(status_code=200)
+        mock_result = MagicMock(status_code=200)
         mock_result.json.return_value = {'objects': []}
         mock_get.return_value = mock_result
 
@@ -112,7 +110,7 @@ class TestTwitterBot(unittest.TestCase):
 
     @patch('requests.get')
     def test_retrieve_quotation_error_no_hashtags(self, mock_get):
-        mock_get.return_value = Mock(status_code=500)
+        mock_get.return_value = MagicMock(status_code=500)
 
         quotation = self.bot.retrieve_quotation([])
 
@@ -121,7 +119,7 @@ class TestTwitterBot(unittest.TestCase):
 
     @patch('requests.get')
     def test_retrieve_quotation_error_with_hashtags(self, mock_get):
-        mock_get.return_value = Mock(status_code=500)
+        mock_get.return_value = MagicMock(status_code=500)
 
         quotation = self.bot.retrieve_quotation(['love', 'hate'])
 
@@ -129,7 +127,7 @@ class TestTwitterBot(unittest.TestCase):
         mock_get.assert_called_with('http://invalid/quotation/?&text__icontains=love&text__icontains=hate')
 
     def test_post_quotation_short_no_mention(self):
-        mock_statuses = Mock()
+        mock_statuses = MagicMock()
         self.bot.twitter.statuses = mock_statuses
 
         result = self.bot.post_quotation('Here I stay. - Henrietta')
@@ -139,7 +137,7 @@ class TestTwitterBot(unittest.TestCase):
             status='Here I stay. - Henrietta', in_reply_to_status_id=None)
 
     def test_post_quotation_too_long_with_mention(self):
-        mock_statuses = Mock()
+        mock_statuses = MagicMock()
         self.bot.twitter.statuses = mock_statuses
 
         result = self.bot.post_quotation(self.LONG_MESSAGE,
@@ -153,10 +151,10 @@ class TestTwitterBot(unittest.TestCase):
 
     def test_post_quotation_unknown_error(self):
         error = TwitterHTTPError(
-            Mock(headers={'Content-Encoding': ''}), '', '', [])
+            MagicMock(headers={'Content-Encoding': ''}), '', '', [])
         error.response_data = {'errors': [{'code': 187}]}
-        mock_update = Mock(side_effect=error)
-        mock_statuses = Mock()
+        mock_update = MagicMock(side_effect=error)
+        mock_statuses = MagicMock()
         mock_statuses.update = mock_update
         self.bot.twitter.statuses = mock_statuses
 
@@ -172,13 +170,10 @@ class TestReplyToMentions(unittest.TestCase):
     def setUp(self):
         self.bot = TwitterBot(redis_url='redis://:@localhost:6379/10',
                               quotation_url='http://invalid/quotation/?')
-        self.bot.twitter.statuses = Mock()
-        self.bot.retrieve_quotation = Mock(return_value="'Tis better")
-        self.bot.post_quotation = Mock()
-
-    def tearDown(self):
-        if self.bot.redis.get('since_id'):
-            self.bot.redis.delete('since_id')
+        self.bot.twitter.statuses = MagicMock()
+        self.bot.retrieve_quotation = MagicMock(return_value="'Tis better")
+        self.bot.post_quotation = MagicMock()
+        self.bot.redis = MagicMock(get=MagicMock(return_value=None))
 
     def test_reply_to_mentions_no_mentions_no_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
@@ -190,13 +185,14 @@ class TestReplyToMentions(unittest.TestCase):
 
     def test_reply_to_mentions_no_mentions_with_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
-        self.bot.redis.set('since_id', '3')
+        self.bot.redis.get.return_value = '3'
 
         result = self.bot.reply_to_mentions()
 
         self.assertEqual(0, result)
         self.bot.twitter.statuses.mentions_timeline.assert_called_with(
             since_id='3')
+        self.bot.redis.get.assert_called_once_with('since_id')
 
     def test_reply_to_mentions_error(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = [
@@ -209,13 +205,14 @@ class TestReplyToMentions(unittest.TestCase):
         result = self.bot.reply_to_mentions()
 
         self.assertEqual(1, result)
-        self.bot.twitter.statuses.mentions_timeline.assert_called_with()
+        self.bot.twitter.statuses.mentions_timeline.assert_called_once_with()
         self.assertEqual(11, len(self.bot.post_quotation.mock_calls))
         self.assertEqual(call("'Tis better", '@jessamyn', '123'),
                          self.bot.post_quotation.mock_calls[0])
         self.assertEqual(call('No quotations found matching #love', '@jessamyn', '123'),
                          self.bot.post_quotation.mock_calls[10])
-        self.assertEqual('123', self.bot.redis.get('since_id'))
+        self.bot.redis.get.assert_called_once_with('since_id')
+        self.bot.redis.set.assert_called_once_with('since_id', '123')
 
     def test_reply_to_mentions_success(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = [
@@ -228,7 +225,8 @@ class TestReplyToMentions(unittest.TestCase):
         result = self.bot.reply_to_mentions()
 
         self.assertEqual(1, result)
-        self.bot.twitter.statuses.mentions_timeline.assert_called_with()
+        self.bot.twitter.statuses.mentions_timeline.assert_called_once_with()
         expected_calls = [call("'Tis better", '@jessamyn', '123')]
         self.assertEqual(expected_calls, self.bot.post_quotation.mock_calls)
-        self.assertEqual('123', self.bot.redis.get('since_id'))
+        self.bot.redis.get.assert_called_once_with('since_id')
+        self.bot.redis.set.assert_called_once_with('since_id', '123')

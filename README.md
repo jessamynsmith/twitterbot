@@ -1,6 +1,8 @@
 twitterbot
 ==========
 
+[![Build Status](https://travis-ci.org/jessamynsmith/twitterbot.svg?branch=master)](https://travis-ci.org/jessamynsmith/twitterbot)
+
 Replies to any twitter mentions with a quotation
 
 Note: Must set up 6 environment variables:
@@ -12,4 +14,3 @@ QUOTATION_URL
 
 for the underquoted, use the following QUOTATION_URL:
 'https://underquoted.herokuapp.com/api/v1/quotations/?format=json&random=true&limit=1'
-

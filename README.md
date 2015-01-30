@@ -14,3 +14,25 @@ Note: Must set up 5 environment variables:
 
 for the underquoted, use the following QUOTATION_URL:
 'https://underquoted.herokuapp.com/api/v1/quotations/?format=json&random=true&limit=1'
+
+Development
+-----------
+
+Get source:
+
+    git clone https://github.com/jessamynsmith/twitterbot
+
+Set up virtualenv:
+
+    mkvirtualenv twitterbot
+    pip install -r requirements.txt
+
+Run tests:
+
+    coverage run -m nose
+    coverage report
+
+Run bot:
+
+    python bin/reply_to_mentions.py  # Check twitter stream for mentions, and reply
+    python bin/post_message.py       # Post a message to twitter

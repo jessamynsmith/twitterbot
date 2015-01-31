@@ -3,7 +3,7 @@ twitterbot
 
 [![Build Status](https://travis-ci.org/jessamynsmith/twitterbot.svg?branch=master)](https://travis-ci.org/jessamynsmith/twitterbot)
 
-Replies to any twitter mentions with a quotation
+Replies to any twitter mentions with a quotation. This project is already set up to be deployed to heroku.
 
 Note: Must set up 5 environment variables:
 - TWITTER_CONSUMER_KEY

@@ -1,9 +1,6 @@
 twitterbot
 ==========
 
-[![Build Status](https://travis-ci.org/jessamynsmith/twitterbot.svg?branch=master)](https://travis-ci.org/jessamynsmith/twitterbot)
-[![Coverage Status](https://coveralls.io/repos/jessamynsmith/twitterbot/badge.svg?branch=master)](https://coveralls.io/r/jessamynsmith/twitterbot?branch=master)
-
 Replies to any twitter mentions with a quotation. This project is already set up to be deployed to heroku.
 
 Note: Must set up 5 environment variables:
@@ -15,6 +12,10 @@ Note: Must set up 5 environment variables:
 
 for the underquoted, use the following QUOTATION_URL:
 'https://underquoted.herokuapp.com/api/v1/quotations/?format=json&random=true&limit=1'
+
+[![Build Status](https://travis-ci.org/jessamynsmith/twitterbot.svg?branch=master)](https://travis-ci.org/jessamynsmith/twitterbot)
+[![Coverage Status](https://coveralls.io/repos/jessamynsmith/twitterbot/badge.svg?branch=master)](https://coveralls.io/r/jessamynsmith/twitterbot?branch=master)
+
 
 Development
 -----------

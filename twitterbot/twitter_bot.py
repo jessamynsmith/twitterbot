@@ -132,6 +132,7 @@ class TwitterBot(object):
 
             error_code = self.DUPLICATE_CODE
             tries = 0
+            quotation = ''
             while error_code == self.DUPLICATE_CODE:
                 if tries > 10:
                     logging.error('Unable to post duplicate message to %s: %s'
@@ -154,4 +155,3 @@ class TwitterBot(object):
     def post_message(self):
             quotation = self.retrieve_quotation()
             self.post_quotation(quotation)
-

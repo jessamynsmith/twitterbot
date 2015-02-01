@@ -124,7 +124,8 @@ class TestTwitterBot(unittest.TestCase):
         quotation = self.bot.retrieve_quotation(['love', 'hate'])
 
         self.assertEqual('No quotations found matching #love #hate', quotation)
-        mock_get.assert_called_with('http://invalid/quotation/?&text__icontains=love&text__icontains=hate')
+        mock_get.assert_called_with('http://invalid/quotation/?&text__icontains=love'
+                                    '&text__icontains=hate')
 
     def test_post_quotation_short_no_mention(self):
         mock_statuses = MagicMock()
@@ -145,8 +146,11 @@ class TestTwitterBot(unittest.TestCase):
 
         self.assertEqual(0, result)
         expected_calls = [
-            call(status="@jessamyn I have loved men and women in my life; I've been labeled 'the bisexual defector' in print. Want to know another ...", in_reply_to_status_id=2),
-            call(status="@jessamyn ... secret? I'm even ambidextrous. I don't like labels. Just call me Martina. - Martina Navratilova", in_reply_to_status_id=2)]
+            call(status="@jessamyn I have loved men and women in my life; I've been labeled "
+                        "'the bisexual defector' in print. Want to know another ...",
+                 in_reply_to_status_id=2),
+            call(status="@jessamyn ... secret? I'm even ambidextrous. I don't like labels. "
+                        "Just call me Martina. - Martina Navratilova", in_reply_to_status_id=2)]
         self.assertEqual(expected_calls, mock_statuses.update.mock_calls)
 
     def test_post_quotation_unknown_error(self):

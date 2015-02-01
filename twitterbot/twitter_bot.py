@@ -1,6 +1,5 @@
 import logging
 import os
-import string
 
 import redis
 import requests
@@ -59,7 +58,7 @@ class TwitterBot(object):
 
         indices.append(index)
 
-        messages = [string.join(tokens[0:indices[0]], ' ')]
+        messages = [" ".join(tokens[0:indices[0]])]
         for i in range(1, len(indices)):
             messages[i-1] += ' ...'
             parts = []
@@ -67,7 +66,7 @@ class TwitterBot(object):
                 parts.append(mentioner)
             parts.append("...")
             parts.extend(tokens[indices[i-1]:indices[i]])
-            messages.append(string.join(parts, ' '))
+            messages.append(" ".join(parts))
 
         return messages
 
@@ -75,7 +74,7 @@ class TwitterBot(object):
         message = base_message
         if len(hashtags) > 0:
             hashed_tags = ['#%s' % x for x in hashtags]
-            hash_message = string.join(hashed_tags, ' ')
+            hash_message = " ".join(hashed_tags)
             message = '%s matching %s' % (base_message, hash_message)
         return message
 

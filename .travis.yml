@@ -6,7 +6,7 @@ python:
 install: "pip install -r requirements/development.txt"
 
 # command to run tests
-script: nosetests && flake8
+script: coverage run -m nose && flake8
 
 # coverage!
 after_success:

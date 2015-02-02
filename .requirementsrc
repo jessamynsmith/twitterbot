@@ -3,7 +3,7 @@ shared = common
 
 [common]
 redis = 2.7.2
-requests = 1.2.0
+requests = 2.5.1
 twitter = 1.9.2
 
 [development]

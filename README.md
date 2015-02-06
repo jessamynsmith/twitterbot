@@ -25,7 +25,7 @@ Get source:
 
 Set up virtualenv:
 
-    mkvirtualenv twitterbot
+    mkvirtualenv twitterbot --python=/path/to/python3
     pip install -r requirements/development.txt
 
 Run tests:

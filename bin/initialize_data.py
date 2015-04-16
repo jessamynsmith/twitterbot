@@ -5,7 +5,7 @@ def add_data(redis, key, data):
     for item in data:
         redis.sadd(key, item.encode('utf-8'))
 
-redis = get_redis('127.0.0.1:6379')
+redis = get_redis()
 
 redis.delete('adjectives', 'sentences')
 

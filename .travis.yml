@@ -16,3 +16,11 @@ script:
 # coverage!
 after_success:
     coveralls
+
+deploy:
+  provider: heroku
+  api_key:
+    secure: O8VdWaVStqG4OjKuGBJCW1Lsj5NhYs5kXSxGrJsNouSsmCbKOfNLExceLMofPvoawv/exfeigmAlbj+bqK4DpLeqspxsd7lJ4AGomIx/nFv2q2BBMk4tyaINwPWyJpzVfHvs3T49BvChgWhLrwRUfn/1IONp6huycpgcPhOnFwA=
+  app: heartbotapp
+  on:
+    repo: jessamynsmith/heartbot

@@ -1,31 +1,27 @@
-twitterbot
-==========
+heartbot
+========
 
-[![Build Status](https://travis-ci.org/jessamynsmith/twitterbot.svg?branch=master)](https://travis-ci.org/jessamynsmith/twitterbot)
-[![Coverage Status](https://coveralls.io/repos/jessamynsmith/twitterbot/badge.svg?branch=master)](https://coveralls.io/r/jessamynsmith/twitterbot?branch=master)
+[![Build Status](https://travis-ci.org/jessamynsmith/heartbot.svg?branch=master)](https://travis-ci.org/jessamynsmith/heartbot)
+[![Coverage Status](https://coveralls.io/repos/jessamynsmith/heartbot/badge.svg?branch=master)](https://coveralls.io/r/jessamynsmith/heartbot?branch=master)
 
-Replies to any twitter mentions with a quotation. This project is already set up to be deployed to heroku.
+Replies to any twitter mentions with a compliment. This project is already set up to be deployed to heroku.
 
 Note: Must set up 5 environment variables:
 - TWITTER_CONSUMER_KEY
 - TWITTER_CONSUMER_SECRET
 - TWITTER_OAUTH_SECRET
 - TWITTER_OAUTH_TOKEN
-- QUOTATION_URL
-
-for the underquoted, use the following QUOTATION_URL:
-'https://underquoted.herokuapp.com/api/v1/quotations/?format=json&random=true&limit=1'
 
 Development
 -----------
 
 Get source:
 
-    git clone https://github.com/jessamynsmith/twitterbot
+    git clone https://github.com/jessamynsmith/heartbot
 
 Set up virtualenv:
 
-    mkvirtualenv twitterbot --python=/path/to/python3
+    mkvirtualenv heartbot --python=/path/to/python3
     pip install -r requirements/development.txt
 
 Run tests:

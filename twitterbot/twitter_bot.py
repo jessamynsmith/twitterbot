@@ -1,8 +1,8 @@
+import json
 import logging
 import os
 
 import redis
-import requests
 from twitter import Twitter
 from twitter.oauth import OAuth
 from twitter.api import TwitterHTTPError
@@ -11,66 +11,26 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                     level=logging.INFO)
 
 
+def get_redis(redis_url=None):
+    if not redis_url:
+        redis_url = os.getenv('REDISTOGO_URL')
+    return redis.Redis.from_url(redis_url)
+
+
 class TwitterBot(object):
 
-    def __init__(self, redis_url=None, quotation_url=None):
+    def __init__(self, redis_url=None):
         OAUTH_TOKEN = os.environ.get('TWITTER_OAUTH_TOKEN')
         OAUTH_SECRET = os.environ.get('TWITTER_OAUTH_SECRET')
         CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
         CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET')
-        if not quotation_url:
-            quotation_url = os.environ.get('QUOTATION_URL')
-        self.BASE_URL = quotation_url
         self.DUPLICATE_CODE = 187
 
         self.twitter = Twitter(auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
                                           CONSUMER_KEY, CONSUMER_SECRET))
+        self.redis = get_redis(redis_url)
 
-        if not redis_url:
-            redis_url = os.getenv('REDISTOGO_URL')
-        self.redis = redis.Redis.from_url(redis_url)
-
-    def tokenize(self, message, message_length, mentioner=None):
-        if mentioner:
-            message = '%s %s' % (mentioner, message)
-        if len(message) < message_length:
-            return [message]
-
-        # -4 for trailing ' ...'
-        max_length = message_length - 4
-        mentioner_length = 0
-        if mentioner:
-            # adjust for initial "@mentioner " on each message
-            mentioner_length = len(mentioner) + 1
-            max_length -= mentioner_length
-        tokens = message.split(' ')
-        indices = []
-        index = 1
-        length = len(tokens[0])
-        for i in range(1, len(tokens)):
-            if length + 1 + len(tokens[i]) >= max_length:
-                indices.append(index)
-                # 3 for leading "..."
-                length = 3 + mentioner_length + len(tokens[i])
-            else:
-                length += 1 + len(tokens[i])
-            index += 1
-
-        indices.append(index)
-
-        messages = [" ".join(tokens[0:indices[0]])]
-        for i in range(1, len(indices)):
-            messages[i-1] += ' ...'
-            parts = []
-            if mentioner:
-                parts.append(mentioner)
-            parts.append("...")
-            parts.extend(tokens[indices[i-1]:indices[i]])
-            messages.append(" ".join(parts))
-
-        return messages
-
-    def get_error(self, base_message, hashtags):
+    def get_error(self, base_message, hashtags=tuple()):
         message = base_message
         if len(hashtags) > 0:
             hashed_tags = ['#%s' % x for x in hashtags]
@@ -78,35 +38,24 @@ class TwitterBot(object):
             message = '%s matching %s' % (base_message, hash_message)
         return message
 
-    def retrieve_quotation(self, hashtags=[]):
-        message = self.get_error('No quotations found', hashtags)
-
-        url = self.BASE_URL
-        for hashtag in hashtags:
-            url = '%s&text__icontains=%s' % (url, hashtag)
-        logging.debug("Trying URL: %s" % url)
-        result = requests.get(url)
-        logging.debug("Quotation request, status code=%s" % result.status_code)
-
-        if result.status_code == 200:
-            quotations = result.json()
-            if len(quotations['objects']) > 0:
-                quotation = quotations['objects'][0]
-                message = '%s - %s' % (quotation['text'],
-                                       quotation['author']['name'])
-
+    def create_compliment(self, mentioner=None):
+        sentence = self.redis.srandmember('sentences')
+        adjective = self.redis.srandmember('adjectives')
+        if not sentence or not adjective:
+            return 'No compliments found.'
+        message = sentence.decode('utf-8').format(adjective.decode('utf-8'))
+        if mentioner:
+            message = '%s %s' % (mentioner, message)
         return message
 
-    def post_quotation(self, quotation, mentioner=None, mention_id=None):
-        messages = self.tokenize(quotation, 140, mentioner)
+    def post_compliment(self, message, mention_id=None):
         code = 0
-        for message in messages:
-            try:
-                self.twitter.statuses.update(status=message,
-                                             in_reply_to_status_id=mention_id)
-            except TwitterHTTPError as e:
-                code = e.response_data['errors'][0]['code']
-                break
+        try:
+            self.twitter.statuses.update(status=message, in_reply_to_status_id=mention_id)
+        except TwitterHTTPError as e:
+            logging.error('Unable to post to twitter: %s' % e)
+            response_data = json.loads(e.response_data.decode('utf-8'))
+            code = response_data['errors'][0]['code']
         return code
 
     def reply_to_mentions(self):
@@ -125,24 +74,19 @@ class TwitterBot(object):
             mention_id = mention['id']
             mentioner = '@%s' % mention['user']['screen_name']
 
-            hashtags = []
-            for hashtag in mention['entities']['hashtags']:
-                hashtags.append(hashtag['text'])
-
             error_code = self.DUPLICATE_CODE
             tries = 0
-            quotation = ''
+            compliment = ''
             while error_code == self.DUPLICATE_CODE:
                 if tries > 10:
                     logging.error('Unable to post duplicate message to %s: %s'
-                                  % (mentioner, quotation))
+                                  % (mentioner, compliment))
                     break
                 elif tries == 10:
-                    quotation = self.get_error('No quotations found', hashtags)
+                    compliment = self.get_error('No compliments found')
                 else:
-                    quotation = self.retrieve_quotation(hashtags)
-                error_code = self.post_quotation(quotation, mentioner,
-                                                 mention_id)
+                    compliment = self.create_compliment(mentioner)
+                error_code = self.post_compliment(compliment, mention_id)
                 tries += 1
 
             mentions_processed += 1
@@ -152,5 +96,5 @@ class TwitterBot(object):
         return mentions_processed
 
     def post_message(self):
-            quotation = self.retrieve_quotation()
-            self.post_quotation(quotation)
+        compliment = self.create_compliment()
+        return self.post_compliment(compliment)

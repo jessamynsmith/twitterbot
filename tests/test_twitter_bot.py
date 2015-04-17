@@ -40,7 +40,7 @@ class TestTwitterBot(unittest.TestCase):
     def test_create_compliment_with_mentioner_success(self, mock_srandmember):
         mock_srandmember.side_effect = [b'I like how {} you are.', b'smart']
 
-        compliment = self.bot.create_compliment('@jane')
+        compliment = self.bot.create_compliment(('@jane',))
 
         self.assertEqual('@jane I like how smart you are.', compliment)
 
@@ -93,9 +93,9 @@ class TestReplyToMentions(unittest.TestCase):
     def setUp(self):
         self.bot = TwitterBot(redis_url='redis://:@localhost:6379/10')
         self.bot.twitter.statuses = MagicMock()
-        self.bot.create_compliment = MagicMock(return_value="You rock!")
         self.bot.post_compliment = MagicMock()
         self.bot.redis = MagicMock(get=MagicMock(return_value=None))
+        self.bot.redis.srandmember.side_effect = [b'I like how {} you are.', b'smart']
 
     def test_reply_to_mentions_no_mentions_no_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
@@ -120,18 +120,19 @@ class TestReplyToMentions(unittest.TestCase):
         self.bot.twitter.statuses.mentions_timeline.return_value = [
             {'id': '123',
              'user': {'screen_name': 'jessamyn'},
-             'entities': {'hashtags': [{'text': 'love'}]}}
+             'entities': {'user_mentions': []}}
         ]
         self.bot.post_compliment.return_value = 187
+        self.bot.redis.srandmember.side_effect = [None] * 20
 
         result = self.bot.reply_to_mentions()
 
         self.assertEqual(1, result)
         self.bot.twitter.statuses.mentions_timeline.assert_called_once_with()
         self.assertEqual(11, len(self.bot.post_compliment.mock_calls))
-        self.assertEqual(call("You rock!", '123'),
+        self.assertEqual(call('No compliments found.', '123'),
                          self.bot.post_compliment.mock_calls[0])
-        self.assertEqual(call('No compliments found', '123'),
+        self.assertEqual(call('No compliments found.', '123'),
                          self.bot.post_compliment.mock_calls[10])
         self.bot.redis.get.assert_called_once_with('since_id')
         self.bot.redis.set.assert_called_once_with('since_id', '123')
@@ -140,7 +141,8 @@ class TestReplyToMentions(unittest.TestCase):
         self.bot.twitter.statuses.mentions_timeline.return_value = [
             {'id': '123',
              'user': {'screen_name': 'jessamyn'},
-             'entities': {'hashtags': [{'text': 'love'}]}}
+             'entities': {'user_mentions': [{'screen_name': 'heartbotapp'},
+                                            {'screen_name': 'jill'}]}}
             ]
         self.bot.post_compliment.return_value = 0
 
@@ -148,7 +150,7 @@ class TestReplyToMentions(unittest.TestCase):
 
         self.assertEqual(1, result)
         self.bot.twitter.statuses.mentions_timeline.assert_called_once_with()
-        expected_calls = [call("You rock!", '123')]
+        expected_calls = [call('@jessamyn @jill I like how smart you are.', '123')]
         self.assertEqual(expected_calls, self.bot.post_compliment.mock_calls)
         self.bot.redis.get.assert_called_once_with('since_id')
         self.bot.redis.set.assert_called_once_with('since_id', '123')
@@ -159,4 +161,4 @@ class TestReplyToMentions(unittest.TestCase):
         result = self.bot.post_message()
 
         self.assertEqual(0, result)
-        self.bot.post_compliment.assert_called_once_with("You rock!")
+        self.bot.post_compliment.assert_called_once_with('I like how smart you are.')

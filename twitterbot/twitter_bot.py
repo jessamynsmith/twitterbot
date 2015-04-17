@@ -38,14 +38,14 @@ class TwitterBot(object):
             message = '%s matching %s' % (base_message, hash_message)
         return message
 
-    def create_compliment(self, mentioner=None):
+    def create_compliment(self, mentioned=tuple()):
         sentence = self.redis.srandmember('sentences')
         adjective = self.redis.srandmember('adjectives')
         if not sentence or not adjective:
             return 'No compliments found.'
         message = sentence.decode('utf-8').format(adjective.decode('utf-8'))
-        if mentioner:
-            message = '%s %s' % (mentioner, message)
+        if len(mentioned):
+            message = '%s %s' % (' '.join(sorted(mentioned)), message)
         return message
 
     def post_compliment(self, message, mention_id=None):
@@ -72,7 +72,14 @@ class TwitterBot(object):
         mentions_processed = 0
         for mention in mentions:
             mention_id = mention['id']
-            mentioner = '@%s' % mention['user']['screen_name']
+
+            # Allow users to tweet compliments at other users, but don't include heartbotapp
+            mentioned = set()
+            mentioned.add('@%s' % mention['user']['screen_name'])
+            for user in mention['entities']['user_mentions']:
+                name = user['screen_name']
+                if name != 'heartbotapp':
+                    mentioned.add('@%s' % name)
 
             error_code = self.DUPLICATE_CODE
             tries = 0
@@ -80,12 +87,12 @@ class TwitterBot(object):
             while error_code == self.DUPLICATE_CODE:
                 if tries > 10:
                     logging.error('Unable to post duplicate message to %s: %s'
-                                  % (mentioner, compliment))
+                                  % (mentioned, compliment))
                     break
                 elif tries == 10:
-                    compliment = self.get_error('No compliments found')
+                    compliment = self.get_error('No compliments found.')
                 else:
-                    compliment = self.create_compliment(mentioner)
+                    compliment = self.create_compliment(mentioned)
                 error_code = self.post_compliment(compliment, mention_id)
                 tries += 1
 

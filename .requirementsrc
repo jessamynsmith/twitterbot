@@ -2,8 +2,8 @@
 shared = common
 
 [common]
-redis = 2.10.3
 twitter = 1.16.0
+pymongo = 3.0
 
 [development]
 coverage = 3.7.1

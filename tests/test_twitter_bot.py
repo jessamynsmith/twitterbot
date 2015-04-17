@@ -8,15 +8,17 @@ from twitterbot.twitter_bot import TwitterBot
 class TestTwitterBot(unittest.TestCase):
 
     def setUp(self):
-        self.bot = TwitterBot(redis_url='redis://:@localhost:6379/10')
+        self.bot = TwitterBot(mongo_uri='mongodb://localhost', db_name='heartbottest')
+        self.bot.mongo.sentences.remove()
+        self.bot.mongo.words.remove()
 
-    @patch('redis.Redis.from_url')
+    @patch('pymongo.MongoClient')
     def test_constructor_no_urls(self, mock_from_url):
         mock_from_url.return_value = None
 
         bot = TwitterBot()
 
-        self.assertEqual(None, bot.redis)
+        self.assertEqual(None, bot.mongo)
 
     def test_get_error_no_hashtags(self):
         error = self.bot.get_error('An error has occurred', [])
@@ -28,26 +30,29 @@ class TestTwitterBot(unittest.TestCase):
 
         self.assertEqual('An error has occurred matching #love #hate', error)
 
-    @patch('redis.Redis.srandmember')
-    def test_create_compliment_success(self, mock_srandmember):
-        mock_srandmember.side_effect = [b'I like how {} you are.', b'smart']
+    def test_create_compliment_success_simple(self):
+        self.bot.mongo.sentences.insert_one({'type': None, 'sentence': "You're a bright light."})
 
         compliment = self.bot.create_compliment()
 
-        self.assertEqual('I like how smart you are.', compliment)
+        self.assertEqual("You're a bright light.", compliment)
 
-    @patch('redis.Redis.srandmember')
-    def test_create_compliment_with_mentioner_success(self, mock_srandmember):
-        mock_srandmember.side_effect = [b'I like how {} you are.', b'smart']
+    def test_create_compliment_success_complex(self):
+        self.bot.mongo.sentences.insert_one({'type': 'adjective', 'sentence': "You're {}."})
+        self.bot.mongo.words.insert_one({'type': 'adjective', 'word': "smart"})
+
+        compliment = self.bot.create_compliment()
+
+        self.assertEqual("You're smart.", compliment)
+
+    def test_create_compliment_success_with_mentioner(self):
+        self.bot.mongo.sentences.insert_one({'type': None, 'sentence': "You're a bright light."})
 
         compliment = self.bot.create_compliment(('@jane',))
 
-        self.assertEqual('@jane I like how smart you are.', compliment)
+        self.assertEqual("@jane You're a bright light.", compliment)
 
-    @patch('redis.Redis.srandmember')
-    def test_create_compliment_error(self, mock_srandmember):
-        mock_srandmember.return_value = None
-
+    def test_create_compliment_error(self):
         compliment = self.bot.create_compliment()
 
         self.assertEqual('No compliments found.', compliment)
@@ -91,11 +96,12 @@ class TestTwitterBot(unittest.TestCase):
 class TestReplyToMentions(unittest.TestCase):
 
     def setUp(self):
-        self.bot = TwitterBot(redis_url='redis://:@localhost:6379/10')
+        self.bot = TwitterBot(mongo_uri='mongodb://localhost', db_name='heartbottest')
         self.bot.twitter.statuses = MagicMock()
         self.bot.post_compliment = MagicMock()
-        self.bot.redis = MagicMock(get=MagicMock(return_value=None))
-        self.bot.redis.srandmember.side_effect = [b'I like how {} you are.', b'smart']
+        self.bot.mongo.sentences.insert_one({'type': 'adjective', 'sentence': "You're {}."})
+        self.bot.mongo.words.insert_one({'type': 'adjective', 'word': "smart"})
+        self.bot.mongo.since_id.remove()
 
     def test_reply_to_mentions_no_mentions_no_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
@@ -103,18 +109,17 @@ class TestReplyToMentions(unittest.TestCase):
         result = self.bot.reply_to_mentions()
 
         self.assertEqual(0, result)
-        self.bot.twitter.statuses.mentions_timeline.assert_called_with()
+        self.bot.twitter.statuses.mentions_timeline.assert_called_with(count=200)
 
     def test_reply_to_mentions_no_mentions_with_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
-        self.bot.redis.get.return_value = '3'
+        self.bot.mongo.since_id.insert_one({'id': '3'})
 
         result = self.bot.reply_to_mentions()
 
         self.assertEqual(0, result)
-        self.bot.twitter.statuses.mentions_timeline.assert_called_with(
-            since_id='3')
-        self.bot.redis.get.assert_called_once_with('since_id')
+        self.bot.twitter.statuses.mentions_timeline.assert_called_with(count=200, since_id='3')
+        self.assertEqual([], self.bot.post_compliment.mock_calls)
 
     def test_reply_to_mentions_error(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = [
@@ -123,19 +128,17 @@ class TestReplyToMentions(unittest.TestCase):
              'entities': {'user_mentions': []}}
         ]
         self.bot.post_compliment.return_value = 187
-        self.bot.redis.srandmember.side_effect = [None] * 20
+        self.bot.mongo.sentences.remove()
 
         result = self.bot.reply_to_mentions()
 
         self.assertEqual(1, result)
-        self.bot.twitter.statuses.mentions_timeline.assert_called_once_with()
+        self.bot.twitter.statuses.mentions_timeline.assert_called_once_with(count=200)
         self.assertEqual(11, len(self.bot.post_compliment.mock_calls))
         self.assertEqual(call('No compliments found.', '123'),
                          self.bot.post_compliment.mock_calls[0])
         self.assertEqual(call('No compliments found.', '123'),
                          self.bot.post_compliment.mock_calls[10])
-        self.bot.redis.get.assert_called_once_with('since_id')
-        self.bot.redis.set.assert_called_once_with('since_id', '123')
 
     def test_reply_to_mentions_success(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = [
@@ -149,11 +152,9 @@ class TestReplyToMentions(unittest.TestCase):
         result = self.bot.reply_to_mentions()
 
         self.assertEqual(1, result)
-        self.bot.twitter.statuses.mentions_timeline.assert_called_once_with()
-        expected_calls = [call('@jessamyn @jill I like how smart you are.', '123')]
+        self.bot.twitter.statuses.mentions_timeline.assert_called_once_with(count=200)
+        expected_calls = [call("@jessamyn @jill You're smart.", '123')]
         self.assertEqual(expected_calls, self.bot.post_compliment.mock_calls)
-        self.bot.redis.get.assert_called_once_with('since_id')
-        self.bot.redis.set.assert_called_once_with('since_id', '123')
 
     def test_post_message(self):
         self.bot.post_compliment.return_value = 0
@@ -161,4 +162,4 @@ class TestReplyToMentions(unittest.TestCase):
         result = self.bot.post_message()
 
         self.assertEqual(0, result)
-        self.bot.post_compliment.assert_called_once_with('I like how smart you are.')
+        self.bot.post_compliment.assert_called_once_with("You're smart.")

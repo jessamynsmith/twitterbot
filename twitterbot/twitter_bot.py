@@ -1,8 +1,9 @@
 import json
 import logging
 import os
+import random
 
-import redis
+import pymongo
 from twitter import Twitter
 from twitter.oauth import OAuth
 from twitter.api import TwitterHTTPError
@@ -11,15 +12,18 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                     level=logging.INFO)
 
 
-def get_redis(redis_url=None):
-    if not redis_url:
-        redis_url = os.getenv('REDISTOGO_URL')
-    return redis.Redis.from_url(redis_url)
+def get_mongo(mongo_uri=None, db_name='heartbot'):
+    if not mongo_uri:
+        mongo_uri = os.getenv('MONGOLAB_URI')
+    mongo = pymongo.MongoClient(mongo_uri)
+    if mongo:
+        return mongo[db_name]
+    return None
 
 
 class TwitterBot(object):
 
-    def __init__(self, redis_url=None):
+    def __init__(self, mongo_uri=None, db_name=None):
         OAUTH_TOKEN = os.environ.get('TWITTER_OAUTH_TOKEN')
         OAUTH_SECRET = os.environ.get('TWITTER_OAUTH_SECRET')
         CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
@@ -28,7 +32,7 @@ class TwitterBot(object):
 
         self.twitter = Twitter(auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
                                           CONSUMER_KEY, CONSUMER_SECRET))
-        self.redis = get_redis(redis_url)
+        self.mongo = get_mongo(mongo_uri, db_name)
 
     def get_error(self, base_message, hashtags=tuple()):
         message = base_message
@@ -39,11 +43,15 @@ class TwitterBot(object):
         return message
 
     def create_compliment(self, mentioned=tuple()):
-        sentence = self.redis.srandmember('sentences')
-        adjective = self.redis.srandmember('adjectives')
-        if not sentence or not adjective:
+        num_records = self.mongo.sentences.count()
+        if num_records < 1:
             return 'No compliments found.'
-        message = sentence.decode('utf-8').format(adjective.decode('utf-8'))
+        index = random.randint(0, num_records-1)
+        sentence = self.mongo.sentences.find().limit(1).skip(index)[0]
+        message = sentence['sentence']
+        if sentence['type']:
+            word = self.mongo.words.find({'type': sentence['type']}).limit(1).skip(index)[0]
+            message = message.format(word['word'])
         if len(mentioned):
             message = '%s %s' % (' '.join(sorted(mentioned)), message)
         return message
@@ -59,18 +67,19 @@ class TwitterBot(object):
         return code
 
     def reply_to_mentions(self):
-        since_id = self.redis.get('since_id')
+        since_id = self.mongo.since_id.find_one()
         logging.debug("Retrieved since_id: %s" % since_id)
 
-        kwargs = {}
+        kwargs = {'count': 200}
         if since_id:
-            kwargs['since_id'] = since_id.strip()
+            kwargs['since_id'] = since_id['id']
 
         mentions = self.twitter.statuses.mentions_timeline(**kwargs)
         logging.info("Retrieved %s mentions" % len(mentions))
 
         mentions_processed = 0
-        for mention in mentions:
+        # We want to process least recent to most recent, so that since_id is set properly
+        for mention in reversed(mentions):
             mention_id = mention['id']
 
             # Allow users to tweet compliments at other users, but don't include heartbotapp
@@ -98,7 +107,8 @@ class TwitterBot(object):
 
             mentions_processed += 1
             logging.info("Attempting to store since_id: %s" % mention_id)
-            self.redis.set('since_id', mention_id)
+            self.mongo.since_id.remove()
+            self.mongo.since_id.insert_one({'id': mention_id})
 
         return mentions_processed
 

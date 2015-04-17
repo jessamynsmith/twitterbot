@@ -1,18 +1,34 @@
-from twitterbot.twitter_bot import get_redis
+from twitterbot.twitter_bot import get_mongo
 
 
-def add_data(redis, key, data):
-    for item in data:
-        redis.sadd(key, item.encode('utf-8'))
+def add_data(mongo, key, data):
+    mongo[key].insert_many(data)
 
-redis = get_redis()
+mongo = get_mongo()
 
-redis.delete('adjectives', 'sentences')
+mongo.sentences.remove()
+mongo.words.remove()
+mongo.since_id.drop()
 
-adjectives = ('smart', 'helpful', 'kind', 'hard-working', 'meticulous', 'diligent')
-add_data(redis, 'adjectives', adjectives)
+sentences = [{'type': 'adjective', 'sentence': 'I really appreciate how {} you are.'},
+             {'type': 'adjective', 'sentence': 'I am so impressed by how {} you are.'},
+             {'type': 'noun', 'sentence': 'Your {} is a great inspiration.'},
+             {'type': None,
+              'sentence': 'You are such a bright light and I am so glad you are here with me.'},
+             {'type': None, 'sentence': 'My world is a better place with you in it.'},
+             {'type': None, 'sentence': 'Your contributions bring great value.'},
+             {'type': None, 'sentence': 'I keep finding new wonderful things about you!'}]
+add_data(mongo, 'sentences', sentences)
 
-sentences = ('I really appreciate how {} you are.',
-             'I am super inspired by how {} you are.',
-             'I am so impressed by how {} you are.')
-add_data(redis, 'sentences', sentences)
+words = [{'type': 'adjective', 'word': 'smart'},
+         {'type': 'adjective', 'word': 'helpful'},
+         {'type': 'adjective', 'word': 'kind'},
+         {'type': 'adjective', 'word': 'hard-working'},
+         {'type': 'adjective', 'word': 'meticulous'},
+         {'type': 'adjective', 'word': 'diligent'},
+         {'type': 'adjective', 'word': 'courageous'},
+         {'type': 'noun', 'word': 'intelligence'},
+         {'type': 'noun', 'word': 'kindness'},
+         {'type': 'noun', 'word': 'diligence'},
+         {'type': 'noun', 'word': 'courage'}]
+add_data(mongo, 'words', words)

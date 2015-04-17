@@ -12,6 +12,19 @@ Note: Must set up 4 environment variables:
 - TWITTER_OAUTH_SECRET
 - TWITTER_OAUTH_TOKEN
 
+Add Compliments
+---------------
+
+Edit bin/initialize_data.py and add compliments as desired. You can substitute up to one word (noun
+or adjective) per sentence. The type field indicates what type of word to substitute. You can also
+add a sentence to be used as-is, by specifying type=None. E.g.:
+ 
+    sentences = [{'type': 'adjective', 'sentence': 'I really appreciate how {} you are.'},
+                 ...
+                 {'type': None, 'sentence': 'My world is a better place with you in it.'}]
+
+I'm happy to merge pull requests with appropriate compliments!
+
 Development
 -----------
 
@@ -31,5 +44,6 @@ Run tests:
 
 Run bot:
 
+    python bin/initialize_data.py    # Clears any current data and adds compliments to datastore
     python bin/reply_to_mentions.py  # Check twitter stream for mentions, and reply
     python bin/post_message.py       # Post a message to twitter

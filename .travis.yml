@@ -5,17 +5,20 @@ python:
   - "3.3"
   - "3.4"
 
+services:
+  - mongodb
+
 # command to install dependencies
 install: "pip install -r requirements/development.txt"
 
 # command to run tests
 script:
-    - coverage run -m nose
-    - flake8
+  - coverage run -m nose
+  - flake8
 
 # coverage!
 after_success:
-    coveralls
+  coveralls
 
 deploy:
   provider: heroku

@@ -6,7 +6,7 @@ heartbot
 
 Replies to any twitter mentions with a compliment. This project is already set up to be deployed to heroku.
 
-Note: Must set up 5 environment variables:
+Note: Must set up 4 environment variables:
 - TWITTER_CONSUMER_KEY
 - TWITTER_CONSUMER_SECRET
 - TWITTER_OAUTH_SECRET

@@ -8,7 +8,7 @@ from twitterbot.twitter_bot import TwitterBot
 class TestTwitterBot(unittest.TestCase):
 
     def setUp(self):
-        self.bot = TwitterBot(mongo_uri='mongodb://localhost', db_name='heartbottest')
+        self.bot = TwitterBot(mongo_uri='mongodb://localhost/heartbottest')
         self.bot.mongo.sentences.remove()
         self.bot.mongo.words.remove()
 
@@ -96,7 +96,7 @@ class TestTwitterBot(unittest.TestCase):
 class TestReplyToMentions(unittest.TestCase):
 
     def setUp(self):
-        self.bot = TwitterBot(mongo_uri='mongodb://localhost', db_name='heartbottest')
+        self.bot = TwitterBot(mongo_uri='mongodb://localhost/heartbottest')
         self.bot.twitter.statuses = MagicMock()
         self.bot.post_compliment = MagicMock()
         self.bot.mongo.sentences.insert_one({'type': 'adjective', 'sentence': "You're {}."})

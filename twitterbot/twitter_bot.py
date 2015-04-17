@@ -12,18 +12,19 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                     level=logging.INFO)
 
 
-def get_mongo(mongo_uri=None, db_name='heartbot'):
+def get_mongo(mongo_uri=None):
     if not mongo_uri:
         mongo_uri = os.getenv('MONGOLAB_URI')
     mongo = pymongo.MongoClient(mongo_uri)
     if mongo:
-        return mongo[db_name]
+        config = pymongo.uri_parser.parse_uri(mongo_uri)
+        return mongo[config['database']]
     return None
 
 
 class TwitterBot(object):
 
-    def __init__(self, mongo_uri=None, db_name=None):
+    def __init__(self, mongo_uri=None):
         OAUTH_TOKEN = os.environ.get('TWITTER_OAUTH_TOKEN')
         OAUTH_SECRET = os.environ.get('TWITTER_OAUTH_SECRET')
         CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
@@ -32,7 +33,7 @@ class TwitterBot(object):
 
         self.twitter = Twitter(auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
                                           CONSUMER_KEY, CONSUMER_SECRET))
-        self.mongo = get_mongo(mongo_uri, db_name)
+        self.mongo = get_mongo(mongo_uri)
 
     def get_error(self, base_message, hashtags=tuple()):
         message = base_message

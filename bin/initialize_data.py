@@ -8,7 +8,6 @@ mongo = get_mongo()
 
 mongo.sentences.remove()
 mongo.words.remove()
-mongo.since_id.drop()
 
 sentences = [
     {'type': 'adjective', 'sentence': 'You are a shining example of a {} person.'},

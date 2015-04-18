@@ -51,6 +51,7 @@ class TwitterBot(object):
         sentence = self.mongo.sentences.find().limit(1).skip(index)[0]
         message = sentence['sentence']
         if sentence['type']:
+            index = random.randint(0, num_records-1)
             word = self.mongo.words.find({'type': sentence['type']}).limit(1).skip(index)[0]
             message = message.format(word['word'])
         if len(mentioned):

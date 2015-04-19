@@ -1,9 +1,4 @@
 ---
-machine:
-    python:
-        version: 2.7.9
-        version: 3.4.2
-
 dependencies:
     override:
         - pip install -r requirements/development.txt

@@ -2,7 +2,28 @@ import unittest
 from mock import call, patch, MagicMock
 from twitter.api import TwitterHTTPError
 
-from twitter_bot.twitter_bot import main, TwitterBot
+from twitter_bot.twitter_bot import main, Settings, TwitterBot
+
+
+class TestSettings(unittest.TestCase):
+
+    @patch('os.environ.get')
+    def test_constructor_invalid(self, mock_env_get):
+        mock_env_get.return_value = None
+
+        try:
+            Settings()
+            self.fail('Should not be able to construct settings with None values')
+        except ValueError:
+            pass
+
+    @patch('os.environ.get')
+    def test_constructor_valid(self, mock_env_get):
+        mock_env_get.return_value = 'bogus'
+
+        settings = Settings()
+
+        self.assertEqual(['bogus', 'bogus', 'bogus', 'bogus'], settings)
 
 
 class TestTwitterBot(unittest.TestCase):

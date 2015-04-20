@@ -13,8 +13,8 @@ class TestTwitterBot(unittest.TestCase):
         self.bot.mongo.words.remove()
 
     @patch('pymongo.MongoClient')
-    def test_constructor_no_urls(self, mock_from_url):
-        mock_from_url.return_value = None
+    def test_constructor_no_urls(self, mock_mongo):
+        mock_mongo.return_value = None
 
         bot = TwitterBot()
 
@@ -171,8 +171,8 @@ class TestReplyToMentions(unittest.TestCase):
 
     @patch('twitter_bot.twitter_bot.TwitterBot.post_message')
     @patch('pymongo.MongoClient')
-    def test_main_invalid_arg(self, mock_from_url, mock_post):
-        mock_from_url.return_value = None
+    def test_main_invalid_arg(self, mock_mongo, mock_post):
+        mock_mongo.return_value = None
         mock_post.return_value = 33
 
         result = main(['', 'bogus'])
@@ -182,8 +182,8 @@ class TestReplyToMentions(unittest.TestCase):
 
     @patch('twitter_bot.twitter_bot.TwitterBot.post_message')
     @patch('pymongo.MongoClient')
-    def test_main_post_message(self, mock_from_url, mock_post):
-        mock_from_url.return_value = None
+    def test_main_post_message(self, mock_mongo, mock_post):
+        mock_mongo.return_value = None
         mock_post.return_value = 33
 
         result = main(['', 'post_message'])
@@ -193,8 +193,8 @@ class TestReplyToMentions(unittest.TestCase):
 
     @patch('twitter_bot.twitter_bot.TwitterBot.reply_to_mentions')
     @patch('pymongo.MongoClient')
-    def test_main_reply_to_mentions(self, mock_from_url, mock_reply):
-        mock_from_url.return_value = None
+    def test_main_reply_to_mentions(self, mock_mongo, mock_reply):
+        mock_mongo.return_value = None
         mock_reply.return_value = 0
 
         result = main(['', 'reply_to_mentions'])

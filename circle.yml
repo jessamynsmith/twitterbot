@@ -1,6 +1,6 @@
 test:
   override:
-    - .circleci/run_tox.sh
+    - sh .circleci/run_tox.sh
 
 deployment:
     production:

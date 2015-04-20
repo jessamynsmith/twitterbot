@@ -2,7 +2,7 @@ import unittest
 from mock import call, patch, MagicMock
 from twitter.api import TwitterHTTPError
 
-from twitter_bot.twitter_bot import TwitterBot
+from twitter_bot.twitter_bot import main, TwitterBot
 
 
 class TestTwitterBot(unittest.TestCase):
@@ -163,3 +163,41 @@ class TestReplyToMentions(unittest.TestCase):
 
         self.assertEqual(0, result)
         self.bot.post_compliment.assert_called_once_with("You're smart.")
+
+    def test_main_no_args(self):
+        result = main([])
+
+        self.assertEqual(1, result)
+
+    @patch('twitter_bot.twitter_bot.TwitterBot.post_message')
+    @patch('pymongo.MongoClient')
+    def test_main_invalid_arg(self, mock_from_url, mock_post):
+        mock_from_url.return_value = None
+        mock_post.return_value = 33
+
+        result = main(['', 'bogus'])
+
+        self.assertEqual(2, result)
+        self.assertEqual(0, mock_post.call_count)
+
+    @patch('twitter_bot.twitter_bot.TwitterBot.post_message')
+    @patch('pymongo.MongoClient')
+    def test_main_post_message(self, mock_from_url, mock_post):
+        mock_from_url.return_value = None
+        mock_post.return_value = 33
+
+        result = main(['', 'post_message'])
+
+        self.assertEqual(33, result)
+        mock_post.assert_called_once_with()
+
+    @patch('twitter_bot.twitter_bot.TwitterBot.reply_to_mentions')
+    @patch('pymongo.MongoClient')
+    def test_main_reply_to_mentions(self, mock_from_url, mock_reply):
+        mock_from_url.return_value = None
+        mock_reply.return_value = 0
+
+        result = main(['', 'reply_to_mentions'])
+
+        self.assertEqual(0, result)
+        mock_reply.assert_called_once_with()

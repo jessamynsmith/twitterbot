@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import random
+import sys
 
 import pymongo
 from twitter import Twitter
@@ -119,26 +120,29 @@ class TwitterBot(object):
         return self.post_compliment(compliment)
 
 
-def main():
-    import sys
+def main(args):
+    error = "You must specify a single command, either 'post_message' or 'reply_to_mentions'"
 
-    def error():
-        print("You must specify a single command, either 'post_message' or 'reply_to_mentions'")
-        sys.exit(1)
+    if len(args) != 2:
+        print(error)
+        return 1
 
-    if len(sys.argv) != 2:
-        error()
-
-    command = sys.argv[1]
-
+    command = args[1]
     bot = TwitterBot()
+
+    result = 0
     if command == 'post_message':
-        bot.post_message()
+        result = bot.post_message()
     elif command == 'reply_to_mentions':
-        bot.reply_to_mentions()
+        result = bot.reply_to_mentions()
     else:
-        error()
+        print(error)
+        result = 2
+
+    return result
 
 
 if __name__ == '__main__':
-    main()
+    res = main(sys.argv)
+    if res != 0:
+        sys.exit(res)

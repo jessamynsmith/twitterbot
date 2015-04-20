@@ -1,6 +1,11 @@
 test:
   override:
-    - PATH=/home/ubuntu/.pyenv/versions/2.6.8/bin:/home/ubuntu/.pyenv/versions/2.7.9/bin:/home/ubuntu/.pyenv/versions/3.2.5/bin:/home/ubuntu/.pyenv/versions/3.3.3/bin:/home/ubuntu/.pyenv/versions/3.4.2/bin:$PATH tox
+    - PATH=/home/ubuntu/.pyenv/versions/2.6.8/bin:$PATH
+    - PATH=/home/ubuntu/.pyenv/versions/2.7.9/bin:$PATH
+    - PATH=/home/ubuntu/.pyenv/versions/3.2.5/bin:$PATH
+    - PATH=/home/ubuntu/.pyenv/versions/3.3.3/bin:$PATH
+    - PATH=/home/ubuntu/.pyenv/versions/3.4.2/bin:$PATH
+    - tox
 
 deployment:
     production:

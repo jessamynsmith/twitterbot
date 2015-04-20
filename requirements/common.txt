@@ -1,3 +1,2 @@
-newrelic==2.50.0.39
 pymongo==3.0
-twitter==1.16.0
+twitter==1.17.0

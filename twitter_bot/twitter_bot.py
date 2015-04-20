@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import random
@@ -73,8 +72,7 @@ class TwitterBot(object):
             self.twitter.statuses.update(status=message, in_reply_to_status_id=mention_id)
         except TwitterHTTPError as e:
             logging.error('Unable to post to twitter: %s' % e)
-            response_data = json.loads(e.response_data.decode('utf-8'))
-            code = response_data['errors'][0]['code']
+            code = e.response_data['errors'][0]['code']
         return code
 
     def reply_to_mentions(self):

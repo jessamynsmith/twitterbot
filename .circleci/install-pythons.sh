@@ -1,8 +1,7 @@
 set -x
 set -e
 
-BUILDROOT=$HOME
-#BUILDROOT=$HOME/heartbot
+BUILDROOT=$HOME/heartbot
 
 if [[ ! -e .pythonz ]]; then
     wget https://raw.github.com/saghul/pythonz/master/pythonz-install | bash

@@ -1,3 +1,3 @@
 [run]
-source = twitterbot
+source = twitter_bot
 branch = 1

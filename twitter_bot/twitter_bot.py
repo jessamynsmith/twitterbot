@@ -117,3 +117,28 @@ class TwitterBot(object):
     def post_message(self):
         compliment = self.create_compliment()
         return self.post_compliment(compliment)
+
+
+def main():
+    import sys
+
+    def error():
+        print("You must specify a single command, either 'post_message' or 'reply_to_mentions'")
+        sys.exit(1)
+
+    if len(sys.argv) != 2:
+        error()
+
+    command = sys.argv[1]
+
+    bot = TwitterBot()
+    if command == 'post_message':
+        bot.post_message()
+    elif command == 'reply_to_mentions':
+        bot.reply_to_mentions()
+    else:
+        error()
+
+
+if __name__ == '__main__':
+    main()

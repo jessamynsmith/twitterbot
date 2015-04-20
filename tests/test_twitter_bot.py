@@ -2,7 +2,7 @@ import unittest
 from mock import call, patch, MagicMock
 from twitter.api import TwitterHTTPError
 
-from twitterbot.twitter_bot import TwitterBot
+from twitter_bot.twitter_bot import TwitterBot
 
 
 class TestTwitterBot(unittest.TestCase):

@@ -4,6 +4,7 @@ shared = common
 [common]
 twitter = 1.16.0
 pymongo = 3.0
+newrelic = 2.50.0.39
 
 [development]
 coverage = 3.7.1

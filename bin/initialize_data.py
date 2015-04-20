@@ -1,4 +1,4 @@
-from twitterbot.twitter_bot import get_mongo
+from twitter_bot.twitter_bot import get_mongo
 
 
 def add_data(mongo, key, data):

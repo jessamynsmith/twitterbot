@@ -2,6 +2,7 @@ set -x
 set -e
 
 BUILDROOT=$HOME/heartbot
+export PYTHONZ_ROOT=$BUILDROOT
 
 if [[ ! -e .pythonz ]]; then
     wget -O - https://raw.github.com/saghul/pythonz/master/pythonz-install | bash

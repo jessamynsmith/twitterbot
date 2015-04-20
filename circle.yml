@@ -1,9 +1,3 @@
-dependencies:
-  cache_directories:
-    - ".pythonz"
-  pre:
-    - bash ./.circleci/install-pythons.sh
-
 test:
   override:
     - tox

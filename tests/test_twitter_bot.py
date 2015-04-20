@@ -6,17 +6,20 @@ from twitter_bot.twitter_bot import main, TwitterBot
 
 
 class TestTwitterBot(unittest.TestCase):
-
     def setUp(self):
-        self.bot = TwitterBot(mongo_uri='mongodb://localhost/heartbottest')
+        self.settings = {'TWITTER_CONSUMER_KEY': 'bogus',
+                         'TWITTER_CONSUMER_SECRET': 'bogus',
+                         'TWITTER_OAUTH_SECRET': 'bogus',
+                         'TWITTER_OAUTH_TOKEN': 'bogus'}
+        self.bot = TwitterBot(self.settings, mongo_uri='mongodb://localhost/heartbottest')
         self.bot.mongo.sentences.remove()
         self.bot.mongo.words.remove()
 
     @patch('pymongo.MongoClient')
-    def test_constructor_no_urls(self, mock_mongo):
+    def test_constructor_no_uri(self, mock_mongo):
         mock_mongo.return_value = None
 
-        bot = TwitterBot()
+        bot = TwitterBot(settings=self.settings)
 
         self.assertEqual(None, bot.mongo)
 
@@ -94,9 +97,12 @@ class TestTwitterBot(unittest.TestCase):
 
 
 class TestReplyToMentions(unittest.TestCase):
-
     def setUp(self):
-        self.bot = TwitterBot(mongo_uri='mongodb://localhost/heartbottest')
+        self.settings = {'TWITTER_CONSUMER_KEY': 'bogus',
+                         'TWITTER_CONSUMER_SECRET': 'bogus',
+                         'TWITTER_OAUTH_SECRET': 'bogus',
+                         'TWITTER_OAUTH_TOKEN': 'bogus'}
+        self.bot = TwitterBot(self.settings, mongo_uri='mongodb://localhost/heartbottest')
         self.bot.twitter.statuses = MagicMock()
         self.bot.post_compliment = MagicMock()
         self.bot.mongo.sentences.insert_one({'type': 'adjective', 'sentence': "You're {}."})
@@ -146,7 +152,7 @@ class TestReplyToMentions(unittest.TestCase):
              'user': {'screen_name': 'jessamyn'},
              'entities': {'user_mentions': [{'screen_name': 'heartbotapp'},
                                             {'screen_name': 'jill'}]}}
-            ]
+        ]
         self.bot.post_compliment.return_value = 0
 
         result = self.bot.reply_to_mentions()
@@ -165,7 +171,7 @@ class TestReplyToMentions(unittest.TestCase):
         self.bot.post_compliment.assert_called_once_with("You're smart.")
 
     def test_main_no_args(self):
-        result = main([])
+        result = main(self.settings, [])
 
         self.assertEqual(1, result)
 
@@ -175,7 +181,7 @@ class TestReplyToMentions(unittest.TestCase):
         mock_mongo.return_value = None
         mock_post.return_value = 33
 
-        result = main(['', 'bogus'])
+        result = main(self.settings, ['', 'bogus'])
 
         self.assertEqual(2, result)
         self.assertEqual(0, mock_post.call_count)
@@ -186,7 +192,7 @@ class TestReplyToMentions(unittest.TestCase):
         mock_mongo.return_value = None
         mock_post.return_value = 33
 
-        result = main(['', 'post_message'])
+        result = main(self.settings, ['', 'post_message'])
 
         self.assertEqual(33, result)
         mock_post.assert_called_once_with()
@@ -197,7 +203,7 @@ class TestReplyToMentions(unittest.TestCase):
         mock_mongo.return_value = None
         mock_reply.return_value = 0
 
-        result = main(['', 'reply_to_mentions'])
+        result = main(self.settings, ['', 'reply_to_mentions'])
 
         self.assertEqual(0, result)
         mock_reply.assert_called_once_with()

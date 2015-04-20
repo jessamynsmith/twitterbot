@@ -13,6 +13,19 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                     level=logging.INFO)
 
 
+class Settings(list):
+
+    def __init__(self):
+        super(Settings, self).__init__()
+        tokens = ('OAUTH_TOKEN', 'OAUTH_SECRET', 'CONSUMER_KEY', 'CONSUMER_SECRET')
+        for token in tokens:
+            key = 'TWITTER_%s' % token
+            value = os.environ.get(key)
+            if not value:
+                raise ValueError("Must set environment variable '%s'" % key)
+            self.append(value)
+
+
 def get_mongo(mongo_uri=None):
     if not mongo_uri:
         mongo_uri = os.getenv('MONGOLAB_URI')
@@ -25,15 +38,10 @@ def get_mongo(mongo_uri=None):
 
 class TwitterBot(object):
 
-    def __init__(self, mongo_uri=None):
-        OAUTH_TOKEN = os.environ.get('TWITTER_OAUTH_TOKEN')
-        OAUTH_SECRET = os.environ.get('TWITTER_OAUTH_SECRET')
-        CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
-        CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET')
+    def __init__(self, settings, mongo_uri=None):
         self.DUPLICATE_CODE = 187
 
-        self.twitter = Twitter(auth=OAuth(OAUTH_TOKEN, OAUTH_SECRET,
-                                          CONSUMER_KEY, CONSUMER_SECRET))
+        self.twitter = Twitter(auth=OAuth(*settings))
         self.mongo = get_mongo(mongo_uri)
 
     def get_error(self, base_message, hashtags=tuple()):
@@ -120,7 +128,7 @@ class TwitterBot(object):
         return self.post_compliment(compliment)
 
 
-def main(args):
+def main(settings, args):
     error = "You must specify a single command, either 'post_message' or 'reply_to_mentions'"
 
     if len(args) != 2:
@@ -128,7 +136,7 @@ def main(args):
         return 1
 
     command = args[1]
-    bot = TwitterBot()
+    bot = TwitterBot(settings)
 
     result = 0
     if command == 'post_message':
@@ -143,6 +151,6 @@ def main(args):
 
 
 if __name__ == '__main__':
-    res = main(sys.argv)
+    res = main(Settings(), sys.argv)
     if res != 0:
         sys.exit(res)

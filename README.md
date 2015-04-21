@@ -1,7 +1,7 @@
 heartbot
 ========
 
-[![Build Status](https://travis-ci.org/jessamynsmith/heartbot.svg?branch=master)](https://travis-ci.org/jessamynsmith/heartbot)
+[![Build Status](https://circleci.com/gh/jessamynsmith/heartbot.svg?style=shield)](https://circleci.com/gh/jessamynsmith/heartbot)
 [![Coverage Status](https://coveralls.io/repos/jessamynsmith/heartbot/badge.svg?branch=master)](https://coveralls.io/r/jessamynsmith/heartbot?branch=master)
 
 Replies to any twitter mentions with a compliment. This project is already set up to be deployed to heroku.

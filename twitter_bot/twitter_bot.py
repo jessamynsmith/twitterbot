@@ -1,4 +1,3 @@
-import importlib
 import logging
 
 import pymongo
@@ -12,7 +11,7 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
 
 def get_class(module_name):
     module_parts = module_name.split('.')
-    module = importlib.import_module('.'.join(module_parts[:-1]))
+    module = __import__('.'.join(module_parts[:-1]), fromlist=(module_parts[-1],))
     class_ = getattr(module, module_parts[-1])
     return class_()
 
@@ -110,7 +109,7 @@ class TwitterBot(object):
 
         return messages
 
-    def send_message(self, message, mention_id=None, mentions=set()):
+    def send_message(self, message, mention_id=None, mentions=[]):
         messages = self.tokenize(message, 140, mentions)
         code = 0
         for message in messages:
@@ -145,6 +144,7 @@ class TwitterBot(object):
                 name = user['screen_name']
                 if name != 'heartbotapp':
                     mentions.add('@%s' % name)
+            mentions = sorted(list(mentions))
 
             error_code = self.DUPLICATE_CODE
             tries = 0
@@ -163,7 +163,7 @@ class TwitterBot(object):
 
             mentions_processed += 1
             logging.info("Attempting to store since_id: %s" % mention_id)
-            self.mongo.since_id.remove()
+            self.mongo.since_id.delete_many({})
             self.mongo.since_id.insert_one({'id': mention_id})
 
         return mentions_processed

@@ -14,7 +14,7 @@ class TestRunBot(unittest.TestCase):
         self.bot.post_compliment = MagicMock()
         self.bot.mongo.sentences.insert_one({'type': 'adjective', 'sentence': "You're {}."})
         self.bot.mongo.words.insert_one({'type': 'adjective', 'word': "smart"})
-        self.bot.mongo.since_id.remove()
+        self.bot.mongo.since_id.delete_many({})
 
     def test_main_no_args(self):
         result = main(settings_test, [])

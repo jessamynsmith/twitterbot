@@ -117,7 +117,7 @@ class TestReplyToMentions(unittest.TestCase):
         self.bot = TwitterBot(settings_test)
         self.bot.twitter.statuses = MagicMock()
         self.bot.send_message = MagicMock()
-        self.bot.mongo.since_id.remove()
+        self.bot.mongo.since_id.delete_many({})
 
     def test_reply_to_mentions_no_mentions_no_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
@@ -150,9 +150,9 @@ class TestReplyToMentions(unittest.TestCase):
         self.assertEqual(1, result)
         self.bot.twitter.statuses.mentions_timeline.assert_called_once_with(count=200)
         self.assertEqual(11, len(self.bot.send_message.mock_calls))
-        expected_call = call('Hello World!', '123', {'@jessamyn'})
+        expected_call = call('Hello World!', '123', ['@jessamyn'])
         self.assertEqual(expected_call, self.bot.send_message.mock_calls[0])
-        expected_call = call('No messages found.', '123', {'@jessamyn'})
+        expected_call = call('No messages found.', '123', ['@jessamyn'])
         self.assertEqual(expected_call, self.bot.send_message.mock_calls[10])
 
     def test_reply_to_mentions_success(self):
@@ -168,7 +168,7 @@ class TestReplyToMentions(unittest.TestCase):
 
         self.assertEqual(1, result)
         self.bot.twitter.statuses.mentions_timeline.assert_called_once_with(count=200)
-        expected_calls = [call('Hello World!', '123', {'@jill', '@jessamyn'})]
+        expected_calls = [call('Hello World!', '123', ['@jessamyn', '@jill'])]
         self.assertEqual(expected_calls, self.bot.send_message.mock_calls)
 
     def test_post_message(self):

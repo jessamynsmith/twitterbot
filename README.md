@@ -44,6 +44,6 @@ Run tests:
 
 Run bot:
 
-    python bin/initialize_data.py        # Clears any current data and adds compliments to datastore
-    sh bin/run_bot.sh reply_to_mentions  # Check twitter stream for mentions, and reply
-    sh bin/run_bot.sh post_message       # Post a message to twitter
+    ./bin/initialize_data.py            # Clears any current data and adds compliments to datastore
+    ./bin/run_bot.sh reply_to_mentions  # Check twitter stream for mentions, and reply
+    ./bin/run_bot.sh post_message       # Post a message to twitter

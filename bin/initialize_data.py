@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from twitter_bot.twitter_bot import get_mongo
 
 

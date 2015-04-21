@@ -1,7 +1,5 @@
+import importlib
 import logging
-import os
-import random
-import sys
 
 import pymongo
 from twitter import Twitter
@@ -12,22 +10,18 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                     level=logging.INFO)
 
 
-class Settings(list):
-
-    def __init__(self):
-        super(Settings, self).__init__()
-        tokens = ('OAUTH_TOKEN', 'OAUTH_SECRET', 'CONSUMER_KEY', 'CONSUMER_SECRET')
-        for token in tokens:
-            key = 'TWITTER_%s' % token
-            value = os.environ.get(key)
-            if not value:
-                raise ValueError("Must set environment variable '%s'" % key)
-            self.append(value)
+def get_class(module_name):
+    module_parts = module_name.split('.')
+    module = importlib.import_module('.'.join(module_parts[:-1]))
+    class_ = getattr(module, module_parts[-1])
+    return class_()
 
 
-def get_mongo(mongo_uri=None):
-    if not mongo_uri:
-        mongo_uri = os.getenv('MONGOLAB_URI')
+def get_mongo(mongo_uri):
+    """ Get mongo database instance based on uri
+    :param mongo_uri: connection string uri for mongo
+    :return: mongo instance, with database selected
+    """
     mongo = pymongo.MongoClient(mongo_uri)
     if mongo:
         config = pymongo.uri_parser.parse_uri(mongo_uri)
@@ -35,13 +29,38 @@ def get_mongo(mongo_uri=None):
     return None
 
 
+class SettingsError(Exception):
+    pass
+
+
 class TwitterBot(object):
 
-    def __init__(self, settings, mongo_uri=None):
+    def __init__(self, settings):
+        """ Create a TwitterBot based on settings
+        :param settings: settings module
+        :return: Instantiated TwitterBot
+        """
+
         self.DUPLICATE_CODE = 187
 
-        self.twitter = Twitter(auth=OAuth(*settings))
-        self.mongo = get_mongo(mongo_uri)
+        required_settings = ('OAUTH_TOKEN', 'OAUTH_SECRET',
+                             'CONSUMER_KEY', 'CONSUMER_SECRET',
+                             'MONGO_URI', 'MESSAGES_PROVIDER')
+        for required in required_settings:
+            if not settings.__dict__.get(required):
+                raise SettingsError("Must specify '%s' in settings.py" % required)
+
+        auth = OAuth(
+            settings.OAUTH_TOKEN,
+            settings.OAUTH_SECRET,
+            settings.CONSUMER_KEY,
+            settings.CONSUMER_SECRET
+        )
+        self.twitter = Twitter(auth=auth)
+
+        self.messages = get_class(settings.MESSAGES_PROVIDER)
+
+        self.mongo = get_mongo(settings.MONGO_URI)
 
     def get_error(self, base_message, hashtags=tuple()):
         message = base_message
@@ -51,28 +70,56 @@ class TwitterBot(object):
             message = '%s matching %s' % (base_message, hash_message)
         return message
 
-    def create_compliment(self, mentioned=tuple()):
-        num_records = self.mongo.sentences.count()
-        if num_records < 1:
-            return 'No compliments found.'
-        index = random.randint(0, num_records-1)
-        sentence = self.mongo.sentences.find().limit(1).skip(index)[0]
-        message = sentence['sentence']
-        if sentence['type']:
-            index = random.randint(0, num_records-1)
-            word = self.mongo.words.find({'type': sentence['type']}).limit(1).skip(index)[0]
-            message = message.format(word['word'])
-        if len(mentioned):
-            message = '%s %s' % (' '.join(sorted(mentioned)), message)
-        return message
+    def tokenize(self, message, message_length, mentions=None):
+        mention_text = ''
+        if mentions:
+            mention_text = " ".join(mentions)
+            message = '%s %s' % (mention_text, message)
+        if len(message) < message_length:
+            return [message]
 
-    def post_compliment(self, message, mention_id=None):
+        # -4 for trailing ' ...'
+        max_length = message_length - 4
+        if mentions:
+            # adjust for prepending mentions to each message
+            max_length -= len(mention_text)
+        tokens = message.split(' ')
+        indices = []
+        index = 1
+        length = len(tokens[0])
+        for i in range(1, len(tokens)):
+            if length + 1 + len(tokens[i]) >= max_length:
+                indices.append(index)
+                # 3 for leading "..."
+                length = 3 + len(mention_text) + len(tokens[i])
+            else:
+                length += 1 + len(tokens[i])
+            index += 1
+
+        indices.append(index)
+
+        messages = [" ".join(tokens[0:indices[0]])]
+        for i in range(1, len(indices)):
+            messages[i-1] += ' ...'
+            parts = []
+            if mention_text:
+                parts.append(mention_text)
+            parts.append("...")
+            parts.extend(tokens[indices[i-1]:indices[i]])
+            messages.append(" ".join(parts))
+
+        return messages
+
+    def send_message(self, message, mention_id=None, mentions=set()):
+        messages = self.tokenize(message, 140, mentions)
         code = 0
-        try:
-            self.twitter.statuses.update(status=message, in_reply_to_status_id=mention_id)
-        except TwitterHTTPError as e:
-            logging.error('Unable to post to twitter: %s' % e)
-            code = e.response_data['errors'][0]['code']
+        for message in messages:
+            try:
+                self.twitter.statuses.update(status=message,
+                                             in_reply_to_status_id=mention_id)
+            except TwitterHTTPError as e:
+                logging.error('Unable to post to twitter: %s' % e)
+                code = e.response_data['errors'][0]['code']
         return code
 
     def reply_to_mentions(self):
@@ -83,35 +130,35 @@ class TwitterBot(object):
         if since_id:
             kwargs['since_id'] = since_id['id']
 
-        mentions = self.twitter.statuses.mentions_timeline(**kwargs)
-        logging.info("Retrieved %s mentions" % len(mentions))
+        mentions_list = self.twitter.statuses.mentions_timeline(**kwargs)
+        logging.info("Retrieved %s mentions" % len(mentions_list))
 
         mentions_processed = 0
         # We want to process least recent to most recent, so that since_id is set properly
-        for mention in reversed(mentions):
+        for mention in reversed(mentions_list):
             mention_id = mention['id']
 
-            # Allow users to tweet compliments at other users, but don't include heartbotapp
-            mentioned = set()
-            mentioned.add('@%s' % mention['user']['screen_name'])
+            # Allow users to tweet messages at other users, but don't include self
+            mentions = set()
+            mentions.add('@%s' % mention['user']['screen_name'])
             for user in mention['entities']['user_mentions']:
                 name = user['screen_name']
                 if name != 'heartbotapp':
-                    mentioned.add('@%s' % name)
+                    mentions.add('@%s' % name)
 
             error_code = self.DUPLICATE_CODE
             tries = 0
-            compliment = ''
+            message = ''
             while error_code == self.DUPLICATE_CODE:
                 if tries > 10:
                     logging.error('Unable to post duplicate message to %s: %s'
-                                  % (mentioned, compliment))
+                                  % (mentions, message))
                     break
                 elif tries == 10:
-                    compliment = self.get_error('No compliments found.')
+                    message = self.get_error('No messages found.')
                 else:
-                    compliment = self.create_compliment(mentioned)
-                error_code = self.post_compliment(compliment, mention_id)
+                    message = self.messages.create()
+                error_code = self.send_message(message, mention_id, mentions)
                 tries += 1
 
             mentions_processed += 1
@@ -122,33 +169,4 @@ class TwitterBot(object):
         return mentions_processed
 
     def post_message(self):
-        compliment = self.create_compliment()
-        return self.post_compliment(compliment)
-
-
-def main(settings, args):
-    error = "You must specify a single command, either 'post_message' or 'reply_to_mentions'"
-
-    if len(args) != 2:
-        print(error)
-        return 1
-
-    command = args[1]
-    bot = TwitterBot(settings)
-
-    result = 0
-    if command == 'post_message':
-        result = bot.post_message()
-    elif command == 'reply_to_mentions':
-        result = bot.reply_to_mentions()
-    else:
-        print(error)
-        result = 2
-
-    return result
-
-
-if __name__ == '__main__':
-    res = main(Settings(), sys.argv)
-    if res != 0:
-        sys.exit(res)
+        return self.send_message(self.messages.create())

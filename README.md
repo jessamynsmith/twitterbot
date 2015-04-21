@@ -1,40 +1,50 @@
-heartbot
+twitterbot
 ========
 
-[![Build Status](https://circleci.com/gh/jessamynsmith/heartbot.svg?style=shield)](https://circleci.com/gh/jessamynsmith/heartbot)
-[![Coverage Status](https://coveralls.io/repos/jessamynsmith/heartbot/badge.svg?branch=master)](https://coveralls.io/r/jessamynsmith/heartbot?branch=master)
+[![Build Status](https://circleci.com/gh/jessamynsmith/twitterbot.svg?style=shield)](https://circleci.com/gh/jessamynsmith/twitterbot)
+[![Coverage Status](https://coveralls.io/repos/jessamynsmith/twitterbot/badge.svg?branch=master)](https://coveralls.io/r/jessamynsmith/twitterbot?branch=master)
 
-Replies to any twitter mentions with a compliment. This project is already set up to be deployed to heroku.
+Provides tasks to do the following:
+- Reply to any twitter mentions with a message.
+- Post a message.
+ 
+This project is set up to build on circleci.
 
-Note: Must set up 4 environment variables:
+Note: Must set up 4 environment variables from an oauth-enabled Twitter account:
 - TWITTER_CONSUMER_KEY
 - TWITTER_CONSUMER_SECRET
 - TWITTER_OAUTH_SECRET
 - TWITTER_OAUTH_TOKEN
 
-Add Compliments
+MessageProvider
 ---------------
 
-Edit bin/initialize_data.py and add compliments as desired. You can substitute up to one word (noun
-or adjective) per sentence. The type field indicates what type of word to substitute. You can also
-add a sentence to be used as-is, by specifying type=None. E.g.:
- 
-    sentences = [{'type': 'adjective', 'sentence': 'I really appreciate how {} you are.'},
-                 ...
-                 {'type': None, 'sentence': 'My world is a better place with you in it.'}]
+You can inject your own message provider via settings.py, e.g.
 
-I'm happy to merge pull requests with appropriate compliments!
+```
+MESSAGES_PROVIDER = 'messages.messages.HelloWorldMessageProvider'
+```
+
+You would then need to create a messages.messages module with a 
+HelloWorldMessageProvider class that implements the ```create()``` method, e.g.
+
+```
+class HelloWorldMessageProvider(object):
+
+    def create(self):
+        return "Hello World!"
+```
 
 Development
 -----------
 
 Get source:
 
-    git clone https://github.com/jessamynsmith/heartbot
+    git clone https://github.com/jessamynsmith/twitterbot
 
 Set up virtualenv:
 
-    mkvirtualenv heartbot --python=/path/to/python3
+    mkvirtualenv twitterbot --python=/path/to/python3
     pip install -r requirements/development.txt
 
 Run tests:
@@ -44,6 +54,5 @@ Run tests:
 
 Run bot:
 
-    ./bin/initialize_data.py            # Clears any current data and adds compliments to datastore
     ./bin/run_bot.sh reply_to_mentions  # Check twitter stream for mentions, and reply
     ./bin/run_bot.sh post_message       # Post a message to twitter

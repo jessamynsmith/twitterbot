@@ -2,8 +2,9 @@ test:
   override:
     - ./.circleci/run_tox.sh 2.6.8 2.7.9 3.2.5 3.3.3 3.4.2
 
-deployment:
-    production:
-      branch: master
-      heroku:
-        appname: heartbotapp
+# Enable the following for heroku deployment from circleci
+#deployment:
+#    production:
+#      branch: master
+#      heroku:
+#        appname: <HEROKU_APP_NAME>

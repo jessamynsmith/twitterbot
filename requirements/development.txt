@@ -1,7 +1,7 @@
 -r common.txt
 PyYAML==3.11
 coverage==4.0a5
-coveralls==1.0a2
+-e git://github.com/jessamynsmith/coveralls-python.git#egg=coveralls
 docopt==0.6.2
 flake8==2.4.0
 mccabe==0.3

@@ -33,4 +33,5 @@ nosetests.xml
 .project
 .pydevproject
 
-logs/*
+*.log
+.since_id.txt

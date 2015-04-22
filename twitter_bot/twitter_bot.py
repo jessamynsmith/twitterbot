@@ -1,17 +1,21 @@
 import logging
 import os
 
-import pymongo
-from twitter import Twitter
+from twitter import Twitter, TwitterHTTPError
 from twitter.oauth import OAuth
-from twitter.api import TwitterHTTPError
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
-                    level=logging.INFO)
+
+logging.basicConfig(filename='logs/twitter_bot.log',
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    level=logging.DEBUG)
 
 
 class Settings(object):
-    """ Settings for TwitterBot """
+    """ Settings for TwitterBot
+    You can use Settings as-is by setting environment variables, or subclass
+    Settings to override values
+    """
     def __init__(self):
         # Twitter settings (create a twitter account with oauth enabled to get values)
         self.OAUTH_TOKEN = os.environ.get('TWITTER_OAUTH_TOKEN')
@@ -19,11 +23,14 @@ class Settings(object):
         self.CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
         self.CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET')
 
-        # Mongo URI, local or remote
-        self.MONGO_URI = 'mongodb://127.0.0.1/local'
+        # Filename to be used to store since_id. This is used when retrieving mentions;
+        # only new mentions since since_id will be retrieved. If no value is specified,
+        # ALL available mentions will be retrieved
+        self.SINCE_ID_FILENAME = os.environ.get('TWITTER_SINCE_ID_FILENAME', '.since_id.txt')
 
         # Messages provider
-        self.MESSAGES_PROVIDER = 'messages.HelloWorldMessageProvider'
+        self.MESSAGES_PROVIDER = os.environ.get('TWITTER_MESSAGE_PROVIDER',
+                                                'messages.HelloWorldMessageProvider')
 
 
 def get_class(module_name):
@@ -33,28 +40,22 @@ def get_class(module_name):
     return class_()
 
 
-def get_mongo(mongo_uri):
-    """ Get mongo database instance based on uri
-    :param mongo_uri: connection string uri for mongo
-    :return: mongo instance, with database selected
-    """
-    mongo = pymongo.MongoClient(mongo_uri)
-    if mongo:
-        config = pymongo.uri_parser.parse_uri(mongo_uri)
-        return mongo[config['database']]
-    return None
-
-
 class SettingsError(Exception):
     pass
 
 
 class TwitterBot(object):
+    """ Bot for interacting with Twitter
+    Can reply to mentions and post new messages
+    """
 
-    def _verify_settings(self, settings, required_list, message, count):
+    def _verify_settings(self, settings, required_list, message, count=2):
         for required in required_list:
             if not settings.__dict__.get(required):
                 format_args = [required] * count
+                if required == 'MESSAGES_PROVIDER':
+                    message += (" If TWITTER_MESSAGES_PROVIDER is not set, "
+                                "'messages.HelloWorldMessageProvider' will be used")
                 raise SettingsError(message.format(*format_args))
 
     def __init__(self, settings):
@@ -66,12 +67,11 @@ class TwitterBot(object):
         self.DUPLICATE_CODE = 187
 
         required_twitter_settings = ('OAUTH_TOKEN', 'OAUTH_SECRET',
-                                     'CONSUMER_KEY', 'CONSUMER_SECRET')
+                                     'CONSUMER_KEY', 'CONSUMER_SECRET',
+                                     'MESSAGES_PROVIDER')
         message = ("Must specify '{0}' in settings.py. When using default settings, "
                    "this value is loaded from the TWITTER_{1} environment variable.")
-        self._verify_settings(settings, required_twitter_settings, message, 2)
-        self._verify_settings(settings, ('MONGO_URI', 'MESSAGES_PROVIDER'),
-                              "Must specify '{0}' in settings.py.", 1)
+        self._verify_settings(settings, required_twitter_settings, message)
 
         auth = OAuth(
             settings.OAUTH_TOKEN,
@@ -82,27 +82,51 @@ class TwitterBot(object):
         self.twitter = Twitter(auth=auth)
 
         self.messages = get_class(settings.MESSAGES_PROVIDER)
+        self.since_id_filename = settings.SINCE_ID_FILENAME
 
-        self.mongo = get_mongo(settings.MONGO_URI)
+    def _get_since_id(self):
+        since_id = ''
+        try:
+            with open(self.since_id_filename) as since_id_file:
+                since_id = since_id_file.readline()
+        except IOError:
+            pass
+        logging.info("Retrieved since_id: %s" % since_id)
+        return since_id
 
-    def get_error(self, base_message, hashtags=tuple()):
+    def _set_since_id(self, since_id):
+        temp_filename = '{0}.tmp'.format(self.since_id_filename)
+        with open(temp_filename, 'w') as since_id_file:
+            since_id_file.write(since_id)
+        os.rename(temp_filename, self.since_id_filename)
+        logging.info("Stored since_id: %s" % since_id)
+
+    def _get_error(self, base_message, hashtags=tuple()):
         message = base_message
         if len(hashtags) > 0:
-            hashed_tags = ['#%s' % x for x in hashtags]
+            hashed_tags = ['#{0}'.format(x) for x in hashtags]
             hash_message = " ".join(hashed_tags)
-            message = '%s matching %s' % (base_message, hash_message)
+            message = '{0} matching {1}'.format(base_message, hash_message)
         return message
 
-    def tokenize(self, message, message_length, mentions=None):
+    def tokenize(self, message, max_length, mentions=None):
+        """
+        Tokenize a message into a list of messages of no more than max_length, including mentions
+        in each message
+        :param message: Message to be sent
+        :param max_length: Maximum allowed length for each resulting message
+        :param mentions: List of usernames to mention in each message
+        :return:
+        """
         mention_text = ''
         if mentions:
             mention_text = " ".join(mentions)
-            message = '%s %s' % (mention_text, message)
-        if len(message) < message_length:
+            message = '{0} {1}'.format(mention_text, message)
+        if len(message) < max_length:
             return [message]
 
         # -4 for trailing ' ...'
-        max_length = message_length - 4
+        max_length = max_length - 4
         if mentions:
             # adjust for prepending mentions to each message
             max_length -= len(mention_text)
@@ -134,6 +158,13 @@ class TwitterBot(object):
         return messages
 
     def send_message(self, message, mention_id=None, mentions=[]):
+        """
+        Send the specified message to twitter, with appropriate mentions, tokenized as necessary
+        :param message: Message to be sent
+        :param mention_id: In-reply-to mention_id (to link messages to a previous message)
+        :param mentions: List of usernames to mention in reply
+        :return:
+        """
         messages = self.tokenize(message, 140, mentions)
         code = 0
         for message in messages:
@@ -141,20 +172,24 @@ class TwitterBot(object):
                 self.twitter.statuses.update(status=message,
                                              in_reply_to_status_id=mention_id)
             except TwitterHTTPError as e:
-                logging.error('Unable to post to twitter: %s' % e)
+                logging.error('Unable to post to twitter: {0}'.format(e))
                 code = e.response_data['errors'][0]['code']
         return code
 
     def reply_to_mentions(self):
-        since_id = self.mongo.since_id.find_one()
-        logging.debug("Retrieved since_id: %s" % since_id)
+        """
+        For every mention since since_id, create a message with the provider and use it to
+        reply to the mention
+        :return: Number of mentions processed
+        """
+        since_id = self._get_since_id()
 
         kwargs = {'count': 200}
         if since_id:
-            kwargs['since_id'] = since_id['id']
+            kwargs['since_id'] = since_id
 
         mentions_list = self.twitter.statuses.mentions_timeline(**kwargs)
-        logging.info("Retrieved %s mentions" % len(mentions_list))
+        logging.info("Retrieved {0} mentions".format(len(mentions_list)))
 
         mentions_processed = 0
         # We want to process least recent to most recent, so that since_id is set properly
@@ -163,11 +198,11 @@ class TwitterBot(object):
 
             # Allow users to tweet messages at other users, but don't include self
             mentions = set()
-            mentions.add('@%s' % mention['user']['screen_name'])
+            mentions.add('@{0}'.format(mention['user']['screen_name']))
             for user in mention['entities']['user_mentions']:
                 name = user['screen_name']
                 if name != 'heartbotapp':
-                    mentions.add('@%s' % name)
+                    mentions.add('@{0}'.format(name))
             mentions = sorted(list(mentions))
 
             error_code = self.DUPLICATE_CODE
@@ -175,30 +210,40 @@ class TwitterBot(object):
             message = ''
             while error_code == self.DUPLICATE_CODE:
                 if tries > 10:
-                    logging.error('Unable to post duplicate message to %s: %s'
-                                  % (mentions, message))
+                    logging.error('Unable to post duplicate message to {0}: {1}'.format(
+                                  mentions, message))
                     break
                 elif tries == 10:
-                    message = self.get_error('No messages found.')
+                    message = self._get_error('No messages found.')
                 else:
                     message = self.messages.create()
                 error_code = self.send_message(message, mention_id, mentions)
                 tries += 1
 
             mentions_processed += 1
-            logging.info("Attempting to store since_id: %s" % mention_id)
-            self.mongo.since_id.delete_many({})
-            self.mongo.since_id.insert_one({'id': mention_id})
+            self._set_since_id('{0}'.format(mention_id))
 
         return mentions_processed
 
     def post_message(self):
+        """
+        Creates a message with the message provider and posts it to twitter
+        :return: Status code from twitter (0 on success)
+        """
         return self.send_message(self.messages.create())
 
 
 class Runner(object):
-    def go(self, settings_module, command):
-        bot = TwitterBot(settings_module)
+    """ Wrapper for running TwitterBot
+    """
+    def go(self, settings, command):
+        """
+        Run the specified command using a TwitterBot created with the provided settings
+        :param settings: Settings class
+        :param command: Command to run, either 'post_message' or 'reply_to_mentions'
+        :return: Result of running the command
+        """
+        bot = TwitterBot(settings)
 
         result = 1
         if command == 'post_message':

@@ -1,6 +1,5 @@
 [package]
 twitter = 1.17.0
-pymongo = 3.0
 
 [test]
 coverage = 4.0a5

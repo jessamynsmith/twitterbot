@@ -20,7 +20,7 @@ setup(
     author="Jessamyn Smith",
     author_email="jessamyn.smith@gmail.com",
     url="https://github.com/jessamynsmith/twitterbot",
-    download_url='https://github.com/jessamynsmith/twitterbot/archive/v%s.tar.gz' % version,
+    download_url='https://github.com/jessamynsmith/twitterbot/archive/v{0}.tar.gz'.format(version),
     license='MIT',
     description="Configurable bot that replies to mentions and posts messages to twitter",
     long_description=open('README.rst').read(),

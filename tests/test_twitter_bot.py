@@ -1,18 +1,19 @@
+import os
 import unittest
 from mock import call, MagicMock, patch
 from twitter.api import TwitterHTTPError
 
-from twitter_bot.twitter_bot import Runner, SettingsError, TwitterBot
+from twitter_bot.twitter_bot import Runner, Settings, SettingsError, TwitterBot
 
 
-class MockSettings(object):
+class MockSettings(Settings):
     """ Test settings """
     def __init__(self):
+        super(MockSettings, self).__init__()
         self.OAUTH_TOKEN = 'change_me'
         self.OAUTH_SECRET = 'change_me'
         self.CONSUMER_KEY = 'change_me'
         self.CONSUMER_SECRET = 'change_me'
-        self.MONGO_URI = 'mongodb://127.0.0.1/local'
         self.MESSAGES_PROVIDER = 'twitter_bot.messages.HelloWorldMessageProvider'
 
 
@@ -22,23 +23,25 @@ class TestTwitterBot(unittest.TestCase):
     def setUp(self):
         self.bot = TwitterBot(MockSettings())
 
-    def test_constructor_invalid_MockSettings(self):
+    def test_constructor_invalid_settings(self):
         invalid_settings = MockSettings()
-        invalid_settings.MONGO_URI = None
+        invalid_settings.OAUTH_SECRET = None
 
         try:
             TwitterBot(settings=invalid_settings)
             self.fail("Shouldn't be able to create TwitterBot with missing setting")
         except SettingsError as e:
-            self.assertEqual("Must specify 'MONGO_URI' in settings.py.", '%s' % e)
+            self.assertEqual("Must specify 'OAUTH_SECRET' in settings.py. When using default "
+                             "settings, this value is loaded from the TWITTER_OAUTH_SECRET "
+                             "environment variable.", '{0}'.format(e))
 
     def test_get_error_no_hashtags(self):
-        error = self.bot.get_error('An error has occurred', [])
+        error = self.bot._get_error('An error has occurred', [])
 
         self.assertEqual('An error has occurred', error)
 
     def test_get_error_with_hashtags(self):
-        error = self.bot.get_error('An error has occurred', ['love', 'hate'])
+        error = self.bot._get_error('An error has occurred', ['love', 'hate'])
 
         self.assertEqual('An error has occurred matching #love #hate', error)
 
@@ -72,7 +75,7 @@ class TestTwitterBot(unittest.TestCase):
         messages = self.bot.tokenize(self.MESSAGE, 80, ['@js'])
 
         self.assertEqual(1, len(messages))
-        self.assertEqual('@js %s' % self.MESSAGE, messages[0])
+        self.assertEqual('@js {0}'.format(self.MESSAGE), messages[0])
 
     def test_tokenize_much_too_long_with_mention(self):
         messages = self.bot.tokenize(self.MESSAGE, 40, ['@js'])
@@ -125,7 +128,10 @@ class TestReplyToMentions(unittest.TestCase):
         self.bot = TwitterBot(MockSettings())
         self.bot.twitter.statuses = MagicMock()
         self.bot.send_message = MagicMock()
-        self.bot.mongo.since_id.delete_many({})
+
+    def tearDown(self):
+        if os.path.exists(self.bot.since_id_filename):
+            os.remove(self.bot.since_id_filename)
 
     def test_reply_to_mentions_no_mentions_no_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
@@ -137,7 +143,7 @@ class TestReplyToMentions(unittest.TestCase):
 
     def test_reply_to_mentions_no_mentions_with_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
-        self.bot.mongo.since_id.insert_one({'id': '3'})
+        self.bot._set_since_id('3')
 
         result = self.bot.reply_to_mentions()
 
@@ -194,9 +200,7 @@ class TestRunner(unittest.TestCase):
         self.runner = Runner()
 
     @patch('twitter_bot.twitter_bot.TwitterBot.post_message')
-    @patch('pymongo.MongoClient')
-    def test_go_invalid_arg(self, mock_mongo, mock_post):
-        mock_mongo.return_value = None
+    def test_go_invalid_arg(self, mock_post):
         mock_post.return_value = 33
 
         result = self.runner.go(self.settings, 'bogus')
@@ -205,9 +209,7 @@ class TestRunner(unittest.TestCase):
         self.assertEqual(0, mock_post.call_count)
 
     @patch('twitter_bot.twitter_bot.TwitterBot.post_message')
-    @patch('pymongo.MongoClient')
-    def test_go_post_message(self, mock_mongo, mock_post):
-        mock_mongo.return_value = None
+    def test_go_post_message(self, mock_post):
         mock_post.return_value = 33
 
         result = self.runner.go(self.settings, 'post_message')
@@ -216,9 +218,7 @@ class TestRunner(unittest.TestCase):
         mock_post.assert_called_once_with()
 
     @patch('twitter_bot.twitter_bot.TwitterBot.reply_to_mentions')
-    @patch('pymongo.MongoClient')
-    def test_go_reply_to_mentions(self, mock_mongo, mock_reply):
-        mock_mongo.return_value = None
+    def test_go_reply_to_mentions(self, mock_reply):
         mock_reply.return_value = 0
 
         result = self.runner.go(self.settings, 'reply_to_mentions')

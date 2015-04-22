@@ -1,1 +1,2 @@
+-r requirements/package.txt
 -r requirements/test.txt

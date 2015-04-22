@@ -26,11 +26,12 @@ class Settings(object):
         # Filename to be used to store since_id. This is used when retrieving mentions;
         # only new mentions since since_id will be retrieved. If no value is specified,
         # ALL available mentions will be retrieved
-        self.SINCE_ID_FILENAME = os.environ.get('TWITTER_SINCE_ID_FILENAME', '.since_id.txt')
+        filename = os.environ.get('TWITTER_SINCE_ID_FILENAME', '.since_id.txt')
+        self.SINCE_ID_FILENAME = os.path.join(os.getcwd(), filename)
 
         # Messages provider
-        self.MESSAGES_PROVIDER = os.environ.get('TWITTER_MESSAGE_PROVIDER',
-                                                'messages.HelloWorldMessageProvider')
+        self.MESSAGE_PROVIDER = os.environ.get('TWITTER_MESSAGE_PROVIDER',
+                                               'messages.HelloWorldMessageProvider')
 
 
 def get_class(module_name):
@@ -53,8 +54,8 @@ class TwitterBot(object):
         for required in required_list:
             if not settings.__dict__.get(required):
                 format_args = [required] * count
-                if required == 'MESSAGES_PROVIDER':
-                    message += (" If TWITTER_MESSAGES_PROVIDER is not set, "
+                if required == 'MESSAGE_PROVIDER':
+                    message += (" If TWITTER_MESSAGE_PROVIDER is not set, "
                                 "'messages.HelloWorldMessageProvider' will be used")
                 raise SettingsError(message.format(*format_args))
 
@@ -68,7 +69,7 @@ class TwitterBot(object):
 
         required_twitter_settings = ('OAUTH_TOKEN', 'OAUTH_SECRET',
                                      'CONSUMER_KEY', 'CONSUMER_SECRET',
-                                     'MESSAGES_PROVIDER')
+                                     'MESSAGE_PROVIDER')
         message = ("Must specify '{0}' in settings.py. When using default settings, "
                    "this value is loaded from the TWITTER_{1} environment variable.")
         self._verify_settings(settings, required_twitter_settings, message)
@@ -81,7 +82,7 @@ class TwitterBot(object):
         )
         self.twitter = Twitter(auth=auth)
 
-        self.messages = get_class(settings.MESSAGES_PROVIDER)
+        self.messages = get_class(settings.MESSAGE_PROVIDER)
         self.since_id_filename = settings.SINCE_ID_FILENAME
 
     def _get_since_id(self):
@@ -188,7 +189,12 @@ class TwitterBot(object):
         if since_id:
             kwargs['since_id'] = since_id
 
-        mentions_list = self.twitter.statuses.mentions_timeline(**kwargs)
+        mentions_list = []
+        try:
+            mentions_list = self.twitter.statuses.mentions_timeline(**kwargs)
+        except TwitterHTTPError as e:
+            logging.error('Unable to retrieve mentions from twitter: {0}'.format(e))
+
         logging.info("Retrieved {0} mentions".format(len(mentions_list)))
 
         mentions_processed = 0

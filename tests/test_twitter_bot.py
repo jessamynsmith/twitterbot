@@ -14,7 +14,7 @@ class MockSettings(Settings):
         self.OAUTH_SECRET = 'change_me'
         self.CONSUMER_KEY = 'change_me'
         self.CONSUMER_SECRET = 'change_me'
-        self.MESSAGES_PROVIDER = 'twitter_bot.messages.HelloWorldMessageProvider'
+        self.MESSAGE_PROVIDER = 'twitter_bot.messages.HelloWorldMessageProvider'
 
 
 class TestTwitterBot(unittest.TestCase):

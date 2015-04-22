@@ -4,10 +4,12 @@ TwitterBot
 |Build Status| |Coverage Status|
 
 Easy-to-use TwitterBot that posts new messages and replies to mentions.
+Built on the popular twitter_ package.
 
 Features
 --------
 
+You can use Twitterbot to:
  - Post a new message.
  - Reply to any twitter mentions with a message.
 
@@ -39,24 +41,22 @@ Usage
 **Quick Start**
 
 By default, settings are populated from environment variables. The authentication variables
-are required and can be obtains from your Twitter_ account.
+are required and can be `obtained from your Twitter account`_.
 
- - TWITTER\_CONSUMER\_KEY
- - TWITTER\_CONSUMER\_SECRET
- - TWITTER\_OAUTH\_SECRET
- - TWITTER\_OAUTH\_TOKEN
-
+- TWITTER\_CONSUMER\_KEY
+- TWITTER\_CONSUMER\_SECRET
+- TWITTER\_OAUTH\_SECRET
+- TWITTER\_OAUTH\_TOKEN
 
 You can optionally set the following environment variables:
 
-
- - TWITTER_MESSAGE_PROVIDER
-    Provides messages to be posted. Defaults to 'messages.HelloWorldMessageProvider',
-    a simple provider that always returns "Hello World!"
- - TWITTER_SINCE_ID_FILENAME
-    File in which to store last retrieved since_id. Defaults to './.since_id.txt'
-    You may want to add this to your .gitignore file. You may set the value in the file
-    to start handling mentions at a particular message id.
+- TWITTER_MESSAGE_PROVIDER
+   Provides messages to be posted. Defaults to 'messages.HelloWorldMessageProvider',
+   a simple provider that always returns "Hello World!"
+- TWITTER_SINCE_ID_FILENAME
+   File in which to store last retrieved since_id. Defaults to './.since_id.txt'
+   You may want to add this to your .gitignore file. You may set the value in the file
+   to start handling mentions at a particular message id.
 
 **Customization**
 
@@ -145,11 +145,12 @@ Run bot:
 
 ::
 
-    ./bin/run_bot.sh reply_to_mentions  # Check twitter stream for mentions, and reply
-    ./bin/run_bot.sh post_message       # Post a message to twitter
+    $ ./runner.py reply_to_mentions  # Check twitter stream for mentions, and reply
+    $ ./runner.py post_message       # Post a message to twitter
 
 .. |Build Status| image:: https://circleci.com/gh/jessamynsmith/twitterbot.svg?style=shield
    :target: https://circleci.com/gh/jessamynsmith/twitterbot
 .. |Coverage Status| image:: https://coveralls.io/repos/jessamynsmith/twitterbot/badge.svg?branch=master
    :target: https://coveralls.io/r/jessamynsmith/twitterbot?branch=master
-.. _Twitter: https://dev.twitter.com/oauth/overview/application-owner-access-tokens/
+.. _`obtained from your Twitter account`: https://dev.twitter.com/oauth/overview/application-owner-access-tokens/
+.. _twitter: https://pypi.python.org/pypi/twitter

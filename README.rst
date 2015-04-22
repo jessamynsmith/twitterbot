@@ -1,7 +1,7 @@
 TwitterBot
 ==========
 
-|Build Status| |Coverage Status|
+|Build Status| |Coverage Status| |PyPI Version| |Supported Versions| |Downloads|
 
 Easy-to-use TwitterBot that posts new messages and replies to mentions.
 Built on the popular twitter_ package.
@@ -152,5 +152,11 @@ Run bot:
    :target: https://circleci.com/gh/jessamynsmith/twitterbot
 .. |Coverage Status| image:: https://coveralls.io/repos/jessamynsmith/twitterbot/badge.svg?branch=master
    :target: https://coveralls.io/r/jessamynsmith/twitterbot?branch=master
+.. |PyPI Version| image:: https://pypip.in/version/twitterbot/badge.svg
+   :target: https://pypi.python.org/pypi/twitterbot
+.. |Supported Versions| image:: https://pypip.in/py_versions/twitterbot/badge.svg
+   :target: https://pypi.python.org/pypi/twitterbot
+.. |Downloads| image:: https://pypip.in/download/twitterbot/badge.svg
+   :target: https://pypi.python.org/pypi/twitterbot
 .. _`obtained from your Twitter account`: https://dev.twitter.com/oauth/overview/application-owner-access-tokens/
 .. _twitter: https://pypi.python.org/pypi/twitter

@@ -48,10 +48,15 @@ are required and can be obtains from your Twitter_ account.
 
 
 You can optionally set the following environment variables:
-  - TWITTER_SINCE_ID_FILENAME  # File in which to store last retrieved since_id, default: './.since_id.txt'
-  - TWITTER_MESSAGE_PROVIDER   # Provides messages to be posted, default: 'messages.HelloWorldMessageProvider'
 
-The default message provider always returns "Hello World!"
+
+ - TWITTER_MESSAGE_PROVIDER
+    Provides messages to be posted. Defaults to 'messages.HelloWorldMessageProvider',
+    a simple provider that always returns "Hello World!"
+ - TWITTER_SINCE_ID_FILENAME
+    File in which to store last retrieved since_id. Defaults to './.since_id.txt'
+    You may want to add this to your .gitignore file. You may set the value in the file
+    to start handling mentions at a particular message id.
 
 **Customization**
 

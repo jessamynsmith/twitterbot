@@ -1,6 +1,12 @@
+machine:
+  python:
+    version: 2.7.9
+  post:
+    - pyenv global 2.6.8 2.7.9 3.2.5 3.3.3 3.4.2
+
 test:
   override:
-    - ./.circleci/run_tox.sh 2.6.8 2.7.9 3.2.5 3.3.3 3.4.2
+    - tox
 
 # Enable the following for heroku deployment from circleci
 #deployment:

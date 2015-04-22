@@ -1,4 +1,5 @@
 import logging
+import os
 
 import pymongo
 from twitter import Twitter
@@ -7,6 +8,22 @@ from twitter.api import TwitterHTTPError
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                     level=logging.INFO)
+
+
+class Settings(object):
+    """ Settings for TwitterBot """
+    def __init__(self):
+        # Twitter settings (create a twitter account with oauth enabled to get values)
+        self.OAUTH_TOKEN = os.environ.get('TWITTER_OAUTH_TOKEN')
+        self.OAUTH_SECRET = os.environ.get('TWITTER_OAUTH_SECRET')
+        self.CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
+        self.CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET')
+
+        # Mongo URI, local or remote
+        self.MONGO_URI = 'mongodb://127.0.0.1/local'
+
+        # Messages provider
+        self.MESSAGES_PROVIDER = 'messages.HelloWorldMessageProvider'
 
 
 def get_class(module_name):
@@ -34,6 +51,12 @@ class SettingsError(Exception):
 
 class TwitterBot(object):
 
+    def _verify_settings(self, settings, required_list, message, count):
+        for required in required_list:
+            if not settings.__dict__.get(required):
+                format_args = [required] * count
+                raise SettingsError(message.format(*format_args))
+
     def __init__(self, settings):
         """ Create a TwitterBot based on settings
         :param settings: settings module
@@ -42,12 +65,13 @@ class TwitterBot(object):
 
         self.DUPLICATE_CODE = 187
 
-        required_settings = ('OAUTH_TOKEN', 'OAUTH_SECRET',
-                             'CONSUMER_KEY', 'CONSUMER_SECRET',
-                             'MONGO_URI', 'MESSAGES_PROVIDER')
-        for required in required_settings:
-            if not settings.__dict__.get(required):
-                raise SettingsError("Must specify '%s' in settings.py" % required)
+        required_twitter_settings = ('OAUTH_TOKEN', 'OAUTH_SECRET',
+                                     'CONSUMER_KEY', 'CONSUMER_SECRET')
+        message = ("Must specify '{0}' in settings.py. When using default settings, "
+                   "this value is loaded from the TWITTER_{1} environment variable.")
+        self._verify_settings(settings, required_twitter_settings, message, 2)
+        self._verify_settings(settings, ('MONGO_URI', 'MESSAGES_PROVIDER'),
+                              "Must specify '{0}' in settings.py.", 1)
 
         auth = OAuth(
             settings.OAUTH_TOKEN,
@@ -170,3 +194,18 @@ class TwitterBot(object):
 
     def post_message(self):
         return self.send_message(self.messages.create())
+
+
+class Runner(object):
+    def go(self, settings_module, command):
+        bot = TwitterBot(settings_module)
+
+        result = 1
+        if command == 'post_message':
+            result = bot.post_message()
+        elif command == 'reply_to_mentions':
+            result = bot.reply_to_mentions()
+        else:
+            print("Command must be either 'post_message' or 'reply_to_mentions'")
+
+        return result

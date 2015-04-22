@@ -52,7 +52,7 @@ Set up virtualenv:
 ::
 
     mkvirtualenv twitterbot --python=/path/to/python3
-    pip install -r requirements/development.txt
+    pip install -r requirements/test.txt
 
 Run tests:
 

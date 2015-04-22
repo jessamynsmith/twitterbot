@@ -11,4 +11,4 @@ CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET')
 MONGO_URI = 'mongodb://127.0.0.1/local'
 
 # Messages provider
-MESSAGES_PROVIDER = 'messages.messages.HelloWorldMessageProvider'
+MESSAGES_PROVIDER = 'twitter_bot.messages.HelloWorldMessageProvider'

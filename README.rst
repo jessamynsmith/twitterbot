@@ -4,7 +4,8 @@ TwitterBot
 |Build Status| |Coverage Status| |PyPI Version| |Supported Versions| |Downloads|
 
 Easy-to-use TwitterBot that posts new messages and replies to mentions.
-Built on the popular twitter_ package.
+Built on the popular twitter_ package. Please read Twitter's
+`Automation rules and best practices`_ before setting up a bot.
 
 Features
 --------
@@ -41,7 +42,8 @@ Usage
 **Quick Start**
 
 By default, settings are populated from environment variables. The authentication variables
-are required and can be `obtained from your Twitter account`_.
+are required and can be `obtained from your Twitter account`_. It is recommended that you read
+Twitter's `Automation rules and best practices`_ before setting up a bot.
 
 - TWITTER\_CONSUMER\_KEY
 - TWITTER\_CONSUMER\_SECRET
@@ -221,6 +223,7 @@ Run bot:
    :target: https://pypi.python.org/pypi/twitterbot
 .. |Downloads| image:: https://pypip.in/download/twitterbot/badge.svg
    :target: https://pypi.python.org/pypi/twitterbot
+.. _`Automation rules and best practices`: https://support.twitter.com/articles/76915-automation-rules-and-best-practices
 .. _`working example`: https://github.com/jessamynsmith/underquotedbot
 .. _`@the_underquoted`: https://twitter.com/the_underquoted/
 .. _`obtained from your Twitter account`: https://dev.twitter.com/oauth/overview/application-owner-access-tokens/

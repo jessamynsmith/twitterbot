@@ -134,12 +134,22 @@ class TestTwitterBot(unittest.TestCase):
         self.assertEqual("@js ... manage things. You lead ...", messages[1])
         self.assertEqual("@js ... people. - Grace Hopper", messages[2])
 
-    def test_send_message_dry_run(self):
+    def test_send_message_dry_run_no_mention(self):
         mock_statuses = MagicMock()
         self.bot.twitter.statuses = mock_statuses
         self.bot.dry_run = True
 
         result = self.bot.send_message('You are a bright light.')
+
+        self.assertEqual(0, result)
+        self.assertEqual(0, mock_statuses.update.call_count)
+
+    def test_send_message_dry_run_with_mention_id(self):
+        mock_statuses = MagicMock()
+        self.bot.twitter.statuses = mock_statuses
+        self.bot.dry_run = True
+
+        result = self.bot.send_message('You are a bright light.', mention_id='12345')
 
         self.assertEqual(0, result)
         self.assertEqual(0, mock_statuses.update.call_count)

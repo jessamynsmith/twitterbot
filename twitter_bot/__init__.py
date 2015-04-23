@@ -1,6 +1,6 @@
 from .messages import BaseMessageProvider, HelloWorldMessageProvider, MarkovChainMessageProvider
 from .settings import Settings, SettingsError
-from .since_id import BaseSinceIdProvider, FileSystemSinceIdProvider, RedisSinceIdProvider
+from .since_id import BaseSinceIdProvider, FileSystemSinceIdProvider
 from .twitter_bot import BotRunner, TwitterBot
 
 __all__ = [
@@ -10,7 +10,6 @@ __all__ = [
     "FileSystemSinceIdProvider",
     "HelloWorldMessageProvider",
     "MarkovChainMessageProvider",
-    "RedisSinceIdProvider",
     "Settings",
     "SettingsError",
     "TwitterBot"

@@ -1,7 +1,6 @@
 import os
 from redis import Redis
 
-from twitter_bot.settings import SettingsError
 from twitter_bot.since_id.base_provider import BaseSinceIdProvider
 
 
@@ -12,9 +11,6 @@ class RedisSinceIdProvider(BaseSinceIdProvider):
 
         if not redis_url:
             redis_url = os.environ.get('REDIS_URL')
-            if not redis_url:
-                raise SettingsError("You must supply redis_url or set the REDIS_URL "
-                                    "environment variable.")
         self.redis = Redis.from_url(redis_url)
 
     def get(self):

@@ -15,7 +15,7 @@ class TestMarkovChainMessageProvider(unittest.TestCase):
 
         try:
             messages.MarkovChainMessageProvider()
-            self.fail("Should not be able to instantiate provider without mongo")
+            self.fail("Should not be able to instantiate provider without markov text path")
         except settings.SettingsError as e:
             error = ("Must specify Markov text path. This is loaded from the "
                      "TWITTER_MARKOV_TEXT_PATH environment variable.")

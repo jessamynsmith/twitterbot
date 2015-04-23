@@ -96,9 +96,9 @@ environment variable:
 
 ::
 
-    TWITTER_SINCE_ID_PROVIDER = 'bot.since_id.RedisProvider'
+    TWITTER_SINCE_ID_PROVIDER = 'bot.since_id.redis.RedisSinceIdProvider'
 
-You would then need to create a bot.since_id module with a RedisProvider class
+You would then need to create a bot.since_id.redis module with a RedisSinceIdProvider class
 that implements the ``get()``, ``set()``, and ``delete()`` methods,
 e.g.
 
@@ -109,7 +109,7 @@ e.g.
     import redis
     from twitter_bot import SettingsError
 
-    class RedisProvider(object):
+    class RedisSinceIdProvider(object):
 
         def __init__(self, redis_url=None):
             if not redis_url:

@@ -1,33 +1,8 @@
 import os
 import random
-from . import settings
+from twitter_bot import settings
 
-
-class BaseMessageProvider(object):
-
-    def _extract_hashtags(self, mention):
-        return [x['text'] for x in mention.get('entities', {}).get('hashtags', {})]
-
-    def create(self, mention, max_message_length):
-        """
-        Create a message
-        :param mention: JSON object containing mention details from Twitter (or an empty dict {})
-        :param max_message_length: Maximum allowable length for created message
-        :return: a message
-        """
-        raise NotImplementedError("Child class must implement create(self, mention)")
-
-
-class HelloWorldMessageProvider(BaseMessageProvider):
-
-    def create(self, mention, max_message_length):
-        """
-        Create a message
-        :param mention: JSON object containing mention details from Twitter (or an empty dict {})
-        :param max_message_length: Maximum allowable length for created message
-        :return: the message "Hello World!"
-        """
-        return "Hello World!"
+from twitter_bot.messages.base import BaseMessageProvider
 
 
 class MarkovChainMessageProvider(BaseMessageProvider):
@@ -37,6 +12,8 @@ class MarkovChainMessageProvider(BaseMessageProvider):
         :param text: String of text to be used for Markov chain generation
         :return: Instantiated provider
         """
+        super(MarkovChainMessageProvider, self).__init__()
+
         text_path = os.environ.get('TWITTER_MARKOV_TEXT_PATH')
         if not (text or text_path):
             raise settings.SettingsError("Must specify Markov text path. This is loaded from "
@@ -78,4 +55,4 @@ class MarkovChainMessageProvider(BaseMessageProvider):
         return ' '.join(message[:-1])
 
 
-__all__ = ["BaseMessageProvider", "HelloWorldMessageProvider", "MarkovChainMessageProvider"]
+__all__ = ["MarkovChainMessageProvider"]

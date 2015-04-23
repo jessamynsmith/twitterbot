@@ -1,9 +1,12 @@
 import os
 
+from twitter_bot.since_id.base_provider import BaseSinceIdProvider
 
-class FileSystemProvider(object):
+
+class FileSystemSinceIdProvider(BaseSinceIdProvider):
 
     def __init__(self):
+        super(FileSystemSinceIdProvider, self).__init__()
         filename = os.environ.get('TWITTER_SINCE_ID_FILENAME', '.since_id.txt')
         self.filename = os.path.join(os.getcwd(), filename)
 
@@ -31,4 +34,4 @@ class FileSystemProvider(object):
         return True
 
 
-__all__ = ["FileSystemProvider"]
+__all__ = ["FileSystemSinceIdProvider"]

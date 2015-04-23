@@ -20,12 +20,12 @@ class Settings(object):
         # Provider for since_id. The since_id is used when retrieving mentions from
         # twitter; only new mentions since since_id will be retrieved. If no value is
         # specified, ALL available mentions will be retrieved.
-        self.SINCE_ID_PROVIDER = os.environ.get('TWITTER_SINCE_ID_PROVIDER',
-                                                'twitter_bot.since_id.FileSystemProvider')
+        default = 'twitter_bot.since_id.FileSystemSinceIdProvider'
+        self.SINCE_ID_PROVIDER = os.environ.get('TWITTER_SINCE_ID_PROVIDER', default)
 
         # Messages provider
-        self.MESSAGE_PROVIDER = os.environ.get('TWITTER_MESSAGE_PROVIDER',
-                                               'twitter_bot.messages.HelloWorldMessageProvider')
+        default = 'twitter_bot.messages.HelloWorldMessageProvider'
+        self.MESSAGE_PROVIDER = os.environ.get('TWITTER_MESSAGE_PROVIDER', default)
 
         # Set to True to suppress actually sending messages.
         self.DRY_RUN = os.environ.get('TWITTER_DRY_RUN', False)

@@ -18,7 +18,7 @@ class MockSettings(Settings):
         self.CONSUMER_KEY = 'change_me'
         self.CONSUMER_SECRET = 'change_me'
         self.MESSAGE_PROVIDER = 'twitter_bot.messages.HelloWorldMessageProvider'
-        self.SINCE_ID_PROVIDER = 'twitter_bot.since_id.FileSystemProvider'
+        self.SINCE_ID_PROVIDER = 'twitter_bot.since_id.FileSystemSinceIdProvider'
         self.DRY_RUN = False
 
 
@@ -31,7 +31,7 @@ class MockSymbolicSettings(Settings):
         self.CONSUMER_KEY = 'change_me'
         self.CONSUMER_SECRET = 'change_me'
         self.MESSAGE_PROVIDER = twitter_bot.messages.HelloWorldMessageProvider
-        self.SINCE_ID_PROVIDER = twitter_bot.since_id.FileSystemProvider
+        self.SINCE_ID_PROVIDER = twitter_bot.since_id.FileSystemSinceIdProvider
         self.DRY_RUN = False
 
 
@@ -94,7 +94,7 @@ class TestTwitterBot(unittest.TestCase):
         bot = TwitterBot(settings=settings)
         # assertIsInstance came in in python 2.7; this lib supports 2.6.
         self.assertTrue(isinstance(bot.messages, twitter_bot.messages.HelloWorldMessageProvider))
-        self.assertTrue(isinstance(bot.since_id, twitter_bot.since_id.FileSystemProvider))
+        self.assertTrue(isinstance(bot.since_id, twitter_bot.since_id.FileSystemSinceIdProvider))
 
     def test_tokenize_short(self):
         messages = self.bot.tokenize(self.MESSAGE, 80)

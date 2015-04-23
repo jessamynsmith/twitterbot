@@ -27,4 +27,5 @@ class TestBaseMessageProvider(unittest.TestCase):
             provider.create({}, 20)
             self.fail("Should not be able to call create() on abstract parent class")
         except NotImplementedError as e:
-            self.assertEqual('Child class must implement create(self, mention)', '{0}'.format(e))
+            error = 'Child class must implement create(self, mention, max_message_length)'
+            self.assertEqual(error, '{0}'.format(e))

@@ -18,7 +18,8 @@ class BaseMessageProvider(object):
         :param max_message_length: Maximum allowable length for created message
         :return: a message
         """
-        raise NotImplementedError("Child class must implement create(self, mention)")
+        raise NotImplementedError("Child class must implement "
+                                  "create(self, mention, max_message_length)")
 
 
 __all__ = ["BaseMessageProvider"]

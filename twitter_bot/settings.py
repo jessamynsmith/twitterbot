@@ -27,5 +27,8 @@ class Settings(object):
         self.MESSAGE_PROVIDER = os.environ.get('TWITTER_MESSAGE_PROVIDER',
                                                'twitter_bot.messages.HelloWorldMessageProvider')
 
+        # Set to True to suppress actually sending messages.
+        self.DRY_RUN = os.environ.get('TWITTER_DRY_RUN', False)
+
 
 __all__ = ["Settings", "SettingsError"]

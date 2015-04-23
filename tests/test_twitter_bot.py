@@ -111,7 +111,17 @@ class TestTwitterBot(unittest.TestCase):
         self.assertEqual("@js ... manage things. You lead ...", messages[1])
         self.assertEqual("@js ... people. - Grace Hopper", messages[2])
 
-    def test_post_message_no_mention(self):
+    def test_send_message_dry_run(self):
+        mock_statuses = MagicMock()
+        self.bot.twitter.statuses = mock_statuses
+        self.bot.dry_run = True
+
+        result = self.bot.send_message('You are a bright light.')
+
+        self.assertEqual(0, result)
+        self.assertEqual(0, mock_statuses.update.call_count)
+
+    def test_send_message_no_mention(self):
         mock_statuses = MagicMock()
         self.bot.twitter.statuses = mock_statuses
 
@@ -121,7 +131,7 @@ class TestTwitterBot(unittest.TestCase):
         mock_statuses.update.assert_called_with(
             status='You are a bright light.', in_reply_to_status_id=None)
 
-    def test_post_message_with_mention(self):
+    def test_send_message_with_mention(self):
         mock_statuses = MagicMock()
         self.bot.twitter.statuses = mock_statuses
 
@@ -131,7 +141,7 @@ class TestTwitterBot(unittest.TestCase):
         mock_statuses.update.assert_called_with(
             status='You are a bright light.', in_reply_to_status_id=2)
 
-    def test_post_message_unknown_error(self):
+    def test_send_message_unknown_error(self):
         error = TwitterHTTPError(
             MagicMock(headers={'Content-Encoding': ''}), '', '', [])
         error.response_data = {"errors": [{"code": 187}]}

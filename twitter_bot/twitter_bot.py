@@ -38,7 +38,6 @@ class TwitterBot(object):
         :param settings: settings module
         :return: Instantiated TwitterBot
         """
-
         self.DUPLICATE_CODE = 187
 
         required_twitter_settings = ('OAUTH_TOKEN', 'OAUTH_SECRET',
@@ -58,6 +57,7 @@ class TwitterBot(object):
 
         self.messages = get_class(settings.MESSAGE_PROVIDER)
         self.since_id = get_class(settings.SINCE_ID_PROVIDER)
+        self.dry_run = settings.DRY_RUN
 
     def _get_error(self, base_message, hashtags=tuple()):
         message = base_message
@@ -126,12 +126,19 @@ class TwitterBot(object):
         messages = self.tokenize(message, 140, mentions)
         code = 0
         for message in messages:
-            try:
-                self.twitter.statuses.update(status=message,
-                                             in_reply_to_status_id=mention_id)
-            except TwitterHTTPError as e:
-                logging.error('Unable to post to twitter: {0}'.format(e))
-                code = e.response_data['errors'][0]['code']
+            if self.dry_run:
+                mention_message = ''
+                if mention_id:
+                    mention_message = " to mention_id '{0}'".format(mention_id)
+                logging.info("Not posting to Twitter because DRY_RUN is set. Would have posted "
+                             "the following message{0}:\n{1}".format(mention_message, message))
+            else:
+                try:
+                    self.twitter.statuses.update(status=message,
+                                                 in_reply_to_status_id=mention_id)
+                except TwitterHTTPError as e:
+                    logging.error('Unable to post to twitter: {0}'.format(e))
+                    code = e.response_data['errors'][0]['code']
         return code
 
     def reply_to_mentions(self):

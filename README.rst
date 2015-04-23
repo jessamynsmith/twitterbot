@@ -57,6 +57,8 @@ You can optionally set the following environment variables:
    Provides storage for since_id. Twitter uses sinFile in which to store last retrieved since_id. Defaults to using the filesystem
    ('./.since_id.txt'). You may set a value in the file to start handling mentions
    at a particular message id.
+- TWITTER_DRY_RUN
+   If set to True, messages will be logged rather than actually posting them to Twitter.
 
 **Customization**
 

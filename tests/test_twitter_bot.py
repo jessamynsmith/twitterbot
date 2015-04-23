@@ -4,7 +4,7 @@ from mock import call, MagicMock, patch
 from twitter.api import TwitterHTTPError
 
 from twitter_bot.settings import Settings, SettingsError
-from twitter_bot.twitter_bot import BotRunner, TwitterBot
+from twitter_bot.twitter_bot import BotRunner, get_class, TwitterBot
 
 import twitter_bot.messages
 import twitter_bot.since_id
@@ -40,6 +40,19 @@ class MockTwitterHTTPError(TwitterHTTPError):
 
     def __str__(self):
         return '{0}'.format(self.e)
+
+
+class TestGetClass(unittest.TestCase):
+
+    def test_get_class_string(self):
+        class_ = get_class('tests.test_twitter_bot.TestGetClass')
+
+        self.assertTrue(isinstance(class_, TestGetClass))
+
+    def test_get_class_class(self):
+        class_ = get_class(TestGetClass)
+
+        self.assertTrue(isinstance(class_, TestGetClass))
 
 
 class TestTwitterBot(unittest.TestCase):

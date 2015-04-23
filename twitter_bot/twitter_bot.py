@@ -20,7 +20,7 @@ def get_class(class_or_name):
 
 def _get_class_by_name(class_name):
     module_name, symbol_name = class_name.rsplit('.', 1)
-    module = __import__(module_name)
+    module = __import__(module_name, fromlist=symbol_name)
     return getattr(module, symbol_name)
 
 

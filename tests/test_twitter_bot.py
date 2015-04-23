@@ -18,6 +18,17 @@ class MockSettings(Settings):
         self.MESSAGE_PROVIDER = 'twitter_bot.messages.HelloWorldMessageProvider'
         self.SINCE_ID_PROVIDER = 'twitter_bot.since_id.FileSystemProvider'
 
+class MockSymbolicSettings(Settings):
+    """ Test settings """
+    def __init__(self):
+        super(MockSettings, self).__init__()
+        self.OAUTH_TOKEN = 'change_me'
+        self.OAUTH_SECRET = 'change_me'
+        self.CONSUMER_KEY = 'change_me'
+        self.CONSUMER_SECRET = 'change_me'
+        self.MESSAGE_PROVIDER = twitter_bot.messages.HelloWorldMessageProvider
+        self.SINCE_ID_PROVIDER = twitter_bot.since_id.FileSystemProvider
+
 
 class MockTwitterHTTPError(TwitterHTTPError):
     def __init__(self, e):
@@ -58,6 +69,14 @@ class TestTwitterBot(unittest.TestCase):
                              "settings, this value is loaded from the TWITTER_MESSAGE_PROVIDER "
                              "environment variable. If TWITTER_MESSAGE_PROVIDER is not set, "
                              "'messages.HelloWorldMessageProvider' will be used.", '{0}'.format(e))
+
+    def test_constructor_symbolic_config(self):
+        settings = MockSymbolicSettings()
+        
+        bot = TwitterBot(settings=settings)
+        # assertIsInstance came in in python 2.7; this lib supports 2.6.
+        self.assertTrue(isinstance(twitter_bot.messages.HelloWorldMessageProvider, bot.messages))
+        self.assertTrue(isinstance(twitter_bot.since_id.FileSystemProvider, bot.since_id))
 
     def test_get_error_no_hashtags(self):
         error = self.bot._get_error('An error has occurred', [])

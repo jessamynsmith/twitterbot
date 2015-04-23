@@ -172,18 +172,18 @@ Then call the script as follows:
 Development
 -----------
 
-Get source:
+Fork the project on github and git clone your fork, e.g.:
 
 ::
 
-    git clone https://github.com/jessamynsmith/twitterbot
+    git clone https://github.com/<username>/twitterbot.git
 
 Set up virtualenv:
 
 ::
 
-    mkvirtualenv twitterbot --python=/path/to/python3
-    pip install -r requirements/test.txt
+    mkvirtualenv twitterbot
+    pip install -r requirements/package.txt -r requirements/test.txt
 
 Run tests:
 
@@ -192,12 +192,24 @@ Run tests:
     coverage run -m nose
     coverage report
 
+Verify all supported Python versions:
+
+::
+
+    tox
+
+Check code style:
+
+::
+
+    flake8
+
 Run bot:
 
 ::
 
-    $ ./runner.py reply_to_mentions  # Check twitter stream for mentions, and reply
-    $ ./runner.py post_message       # Post a message to twitter
+    $ ./bin/runner.py reply_to_mentions  # Check twitter stream for mentions, and reply
+    $ ./bin/runner.py post_message       # Post a message to twitter
 
 .. |Build Status| image:: https://circleci.com/gh/jessamynsmith/twitterbot.svg?style=shield
    :target: https://circleci.com/gh/jessamynsmith/twitterbot

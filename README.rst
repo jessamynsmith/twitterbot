@@ -187,24 +187,19 @@ Set up virtualenv:
     mkvirtualenv twitterbot
     pip install -r requirements/package.txt -r requirements/test.txt
 
-Run tests:
+Run tests and check code style:
 
 ::
 
     coverage run -m nose
     coverage report
+    flake8
 
 Verify all supported Python versions:
 
 ::
 
     tox
-
-Check code style:
-
-::
-
-    flake8
 
 Run bot:
 

@@ -64,14 +64,6 @@ class TwitterBot(object):
         self.since_id = get_class(settings.SINCE_ID_PROVIDER)
         self.dry_run = settings.DRY_RUN
 
-    def _get_error(self, base_message, hashtags=tuple()):
-        message = base_message
-        if len(hashtags) > 0:
-            hashed_tags = ['#{0}'.format(x) for x in hashtags]
-            hash_message = " ".join(hashed_tags)
-            message = '{0} matching {1}'.format(base_message, hash_message)
-        return message
-
     def tokenize(self, message, max_length, mentions=None):
         """
         Tokenize a message into a list of messages of no more than max_length, including mentions
@@ -189,7 +181,8 @@ class TwitterBot(object):
                                   mentions, message))
                     break
                 elif tries == 10:
-                    message = self._get_error('No messages found.')
+                    # Tried 10 times to post a message, but all were duplicates
+                    message = 'No unique messages found.'
                 else:
                     message = self.messages.create(mention)
                 error_code = self.send_message(message, mention_id, mentions)

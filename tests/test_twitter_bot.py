@@ -95,16 +95,6 @@ class TestTwitterBot(unittest.TestCase):
         self.assertTrue(isinstance(bot.messages, twitter_bot.messages.HelloWorldMessageProvider))
         self.assertTrue(isinstance(bot.since_id, twitter_bot.since_id.FileSystemProvider))
 
-    def test_get_error_no_hashtags(self):
-        error = self.bot._get_error('An error has occurred', [])
-
-        self.assertEqual('An error has occurred', error)
-
-    def test_get_error_with_hashtags(self):
-        error = self.bot._get_error('An error has occurred', ['love', 'hate'])
-
-        self.assertEqual('An error has occurred matching #love #hate', error)
-
     def test_tokenize_short(self):
         messages = self.bot.tokenize(self.MESSAGE, 80)
 
@@ -255,7 +245,7 @@ class TestReplyToMentions(unittest.TestCase):
         self.assertEqual(11, len(self.bot.send_message.mock_calls))
         expected_call = call('Hello World!', '123', ['@jessamyn'])
         self.assertEqual(expected_call, self.bot.send_message.mock_calls[0])
-        expected_call = call('No messages found.', '123', ['@jessamyn'])
+        expected_call = call('No unique messages found.', '123', ['@jessamyn'])
         self.assertEqual(expected_call, self.bot.send_message.mock_calls[10])
 
     def test_reply_to_mentions_success(self):

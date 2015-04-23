@@ -12,11 +12,16 @@ logging.basicConfig(filename='logs/twitter_bot.log',
                     level=logging.DEBUG)
 
 
-def get_class(module_name):
-    module_parts = module_name.split('.')
-    module = __import__('.'.join(module_parts[:-1]), fromlist=(module_parts[-1],))
-    class_ = getattr(module, module_parts[-1])
-    return class_()
+def get_class(class_or_name):
+    if isinstance(class_or_name, str):
+        class_or_name = _get_class_by_name(class_or_name)
+    return class_or_name()
+
+
+def _get_class_by_name(class_name):
+    module_name, symbol_name = class_name.rsplit('.', 1)
+    module = __import__(module_name)
+    return getattr(module, symbol_name)
 
 
 class TwitterBot(object):

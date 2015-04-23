@@ -76,7 +76,12 @@ e.g.
 
     class MyMessageProvider(object):
 
-        def create(self):
+        def create(self, mention):
+            """
+            Create a message
+            :param mention: JSON object containing mention details from Twitter
+            :return: a message
+            """
             return "This is my message!"
 
 **Setting a Custom Since_id Provider**

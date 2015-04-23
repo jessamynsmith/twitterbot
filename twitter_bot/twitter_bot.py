@@ -191,7 +191,7 @@ class TwitterBot(object):
                 elif tries == 10:
                     message = self._get_error('No messages found.')
                 else:
-                    message = self.messages.create()
+                    message = self.messages.create(mention)
                 error_code = self.send_message(message, mention_id, mentions)
                 tries += 1
 
@@ -205,7 +205,7 @@ class TwitterBot(object):
         Creates a message with the message provider and posts it to twitter
         :return: Status code from twitter (0 on success)
         """
-        return self.send_message(self.messages.create())
+        return self.send_message(self.messages.create({}))
 
 
 class BotRunner(object):

@@ -92,9 +92,12 @@ e.g.
 
 **Setting a Custom Since_id Provider**
 
-The default is to use the FileSystemSinceIdProvider. TwitterBot comes with a Redis provider,
-which you can enable by installing redis and setting environment variables to configure the
-provider. By default, localhost will be used for redis.
+The default is to use the FileSystemSinceIdProvider. Using the file system will NOT work correctly
+on Heroku or any other host with an ephemeral file system. If you cannot rely on the file system,
+you MUST specify a different SinceIdProvider.
+
+TwitterBot comes with a Redis provider, which you can enable by installing redis and setting
+environment variables to configure the provider. By default, localhost will be used for redis.
 
 ::
 

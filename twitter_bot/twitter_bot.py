@@ -8,7 +8,7 @@ from .settings import SettingsError
 
 logging.basicConfig(filename='logs/twitter_bot.log',
                     filemode='a',
-                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    format='%(asctime)s %(name)s %(levelname)s %(message)s',
                     level=logging.DEBUG)
 
 
@@ -168,7 +168,7 @@ class TwitterBot(object):
             mentions.add('@{0}'.format(mention['user']['screen_name']))
             for user in mention['entities']['user_mentions']:
                 name = user['screen_name']
-                if name != 'heartbotapp':
+                if name != mention['in_reply_to_screen_name']:
                     mentions.add('@{0}'.format(name))
             mentions = sorted(list(mentions))
 

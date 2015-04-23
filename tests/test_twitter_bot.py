@@ -20,6 +20,7 @@ class MockSettings(Settings):
         self.CONSUMER_SECRET = 'change_me'
         self.MESSAGE_PROVIDER = 'twitter_bot.messages.HelloWorldMessageProvider'
         self.SINCE_ID_PROVIDER = 'twitter_bot.since_id.FileSystemProvider'
+        self.DRY_RUN = False
 
 
 class MockSymbolicSettings(Settings):
@@ -32,6 +33,7 @@ class MockSymbolicSettings(Settings):
         self.CONSUMER_SECRET = 'change_me'
         self.MESSAGE_PROVIDER = twitter_bot.messages.HelloWorldMessageProvider
         self.SINCE_ID_PROVIDER = twitter_bot.since_id.FileSystemProvider
+        self.DRY_RUN = False
 
 
 class MockTwitterHTTPError(TwitterHTTPError):
@@ -251,8 +253,9 @@ class TestReplyToMentions(unittest.TestCase):
     def test_reply_to_mentions_success(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = [
             {'id': '123',
+             'in_reply_to_screen_name': 'somebot',
              'user': {'screen_name': 'jessamyn'},
-             'entities': {'user_mentions': [{'screen_name': 'heartbotapp'},
+             'entities': {'user_mentions': [{'screen_name': 'somebot'},
                                             {'screen_name': 'jill'}]}}
         ]
         self.bot.send_message.return_value = 0

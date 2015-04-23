@@ -45,14 +45,14 @@ class MockTwitterHTTPError(TwitterHTTPError):
 class TestGetClass(unittest.TestCase):
 
     def test_get_class_string(self):
-        class_ = get_class('tests.test_twitter_bot.TestGetClass')
+        class_ = get_class('tests.test_twitter_bot.MockSymbolicSettings')
 
-        self.assertTrue(isinstance(class_, TestGetClass))
+        self.assertTrue(isinstance(class_, MockSymbolicSettings))
 
     def test_get_class_class(self):
-        class_ = get_class(TestGetClass)
+        class_ = get_class(MockSymbolicSettings)
 
-        self.assertTrue(isinstance(class_, TestGetClass))
+        self.assertTrue(isinstance(class_, MockSymbolicSettings))
 
 
 class TestTwitterBot(unittest.TestCase):

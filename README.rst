@@ -60,7 +60,7 @@ You can optionally set the following environment variables:
 - TWITTER_DRY_RUN
    If set to True, messages will be logged rather than actually posting them to Twitter.
 
-**Customization**
+**Setting a Custom Message Provider**
 
 You can inject your own message provider by setting the following environment variable:
 
@@ -79,6 +79,7 @@ e.g.
         def create(self):
             return "This is my message!"
 
+**Setting a Custom Since_id Provider**
 
 You can inject your own since_id provider (e.g. using redis) by setting the following
 environment variable:
@@ -116,6 +117,8 @@ e.g.
 
         def delete(self):
             return self.redis.delete('since_id')
+
+**Overriding Settings**
 
 If you require more control over settings, you can subclass Settings:
 

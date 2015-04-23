@@ -5,7 +5,6 @@ from twitter.api import TwitterHTTPError
 
 from twitter_bot.settings import Settings, SettingsError
 from twitter_bot.twitter_bot import BotRunner, get_class, TwitterBot
-
 import twitter_bot.messages
 import twitter_bot.since_id
 

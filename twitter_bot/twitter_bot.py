@@ -43,6 +43,7 @@ class TwitterBot(object):
         :param settings: settings module
         :return: Instantiated TwitterBot
         """
+        self.MESSAGE_LENGTH = 140
         self.DUPLICATE_CODE = 187
 
         required_twitter_settings = ('OAUTH_TOKEN', 'OAUTH_SECRET',
@@ -120,7 +121,7 @@ class TwitterBot(object):
         :param mentions: List of usernames to mention in reply
         :return:
         """
-        messages = self.tokenize(message, 140, mentions)
+        messages = self.tokenize(message, self.MESSAGE_LENGTH, mentions)
         code = 0
         for message in messages:
             if self.dry_run:
@@ -184,7 +185,7 @@ class TwitterBot(object):
                     # Tried 10 times to post a message, but all were duplicates
                     message = 'No unique messages found.'
                 else:
-                    message = self.messages.create(mention)
+                    message = self.messages.create(mention, self.MESSAGE_LENGTH)
                 error_code = self.send_message(message, mention_id, mentions)
                 tries += 1
 
@@ -198,7 +199,7 @@ class TwitterBot(object):
         Creates a message with the message provider and posts it to twitter
         :return: Status code from twitter (0 on success)
         """
-        return self.send_message(self.messages.create({}))
+        return self.send_message(self.messages.create({}, self.MESSAGE_LENGTH))
 
 
 class BotRunner(object):

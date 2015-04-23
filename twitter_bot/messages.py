@@ -2,25 +2,45 @@ import os
 import random
 from . import settings
 
-class HelloWorldMessageProvider(object):
 
-    def create(self, mention):
+class BaseMessageProvider(object):
+
+    def _extract_hashtags(self, mention):
+        return [x['text'] for x in mention.get('entities', {}).get('hashtags', {})]
+
+    def create(self, mention, max_message_length):
         """
         Create a message
         :param mention: JSON object containing mention details from Twitter (or an empty dict {})
+        :param max_message_length: Maximum allowable length for created message
         :return: a message
+        """
+        raise NotImplementedError("Child class must implement create(self, mention)")
+
+
+class HelloWorldMessageProvider(BaseMessageProvider):
+
+    def create(self, mention, max_message_length):
+        """
+        Create a message
+        :param mention: JSON object containing mention details from Twitter (or an empty dict {})
+        :param max_message_length: Maximum allowable length for created message
+        :return: the message "Hello World!"
         """
         return "Hello World!"
 
 
-class MarkovChainMessageProvider(object):
+class MarkovChainMessageProvider(BaseMessageProvider):
 
     def __init__(self, text=None):
+        """
+        :param text: String of text to be used for Markov chain generation
+        :return: Instantiated provider
+        """
         text_path = os.environ.get('TWITTER_MARKOV_TEXT_PATH')
         if not (text or text_path):
-            raise settings.SettingsError("Must specify Markov text path. This "
-                "is loaded from the TWITTER_MARKOV_TEXT_PATH environment "
-                "variable.")
+            raise settings.SettingsError("Must specify Markov text path. This is loaded from "
+                                         "the TWITTER_MARKOV_TEXT_PATH environment variable.")
 
         text = text or open(text_path, 'r').read()
         markov_dict = {}
@@ -40,15 +60,22 @@ class MarkovChainMessageProvider(object):
         else:
             return random.choice(list(self.markov_dict.keys()))
 
-    def create(self, mention):
+    def create(self, mention, max_message_length):
+        """
+        Create a message
+        :param mention: JSON object containing mention details from Twitter (or an empty dict {})
+        :param max_message_length: Maximum allowable length for created message
+        :return: A random message created using a Markov chain generator
+        """
         message = []
 
         def message_len():
             return sum([len(w) + 1 for w in message])
 
-        while message_len() < 140:
+        while message_len() < max_message_length:
             message.append(self.a_random_word(message[-1] if message else None))
 
         return ' '.join(message[:-1])
 
-__all__ = ["HelloWorldMessageProvider", "MarkovChainMessageProvider"]
+
+__all__ = ["BaseMessageProvider", "HelloWorldMessageProvider", "MarkovChainMessageProvider"]

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import os.path as p
 
 
-version = "0.1.5"
+version = "0.1.6"
 
 with open(p.join(p.dirname(__file__), 'requirements', 'package.txt'), 'r') as reqs:
     install_requires = [line.strip() for line in reqs]

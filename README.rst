@@ -53,10 +53,10 @@ You can optionally set the following environment variables:
 - TWITTER_MESSAGE_PROVIDER
    Provides messages to be posted. Defaults to 'messages.HelloWorldMessageProvider',
    a simple provider that always returns "Hello World!"
-- TWITTER_SINCE_ID_FILENAME
-   File in which to store last retrieved since_id. Defaults to './.since_id.txt'
-   You may want to add this to your .gitignore file. You may set the value in the file
-   to start handling mentions at a particular message id.
+- TWITTER_SINCE_ID_PROVIDER
+   Provides storage for since_id. Twitter uses sinFile in which to store last retrieved since_id. Defaults to using the filesystem
+   ('./.since_id.txt'). You may set a value in the file to start handling mentions
+   at a particular message id.
 
 **Customization**
 
@@ -66,7 +66,7 @@ You can inject your own message provider by setting the following environment va
 
     TWITTER_MESSAGE_PROVIDER = 'bot.messages.MyMessageProvider'
 
-You would then need to create a messages module with a
+You would then need to create a bot.messages module with a
 MyMessageProvider class that implements the ``create()`` method,
 e.g.
 
@@ -76,6 +76,44 @@ e.g.
 
         def create(self):
             return "This is my message!"
+
+
+You can inject your own since_id provider (e.g. using redis) by setting the following
+environment variable:
+
+::
+
+    TWITTER_SINCE_ID_PROVIDER = 'bot.since_id.RedisProvider'
+
+You would then need to create a bot.since_id module with a RedisProvider class
+that implements the ``get()``, ``set()``, and ``delete()`` methods,
+e.g.
+
+::
+
+    # since_id.py
+    import os
+    import redis
+    from twitter_bot import SettingsError
+
+    class RedisProvider(object):
+
+        def __init__(self, redis_url=None):
+            if not redis_url:
+                redis_url = os.environ.get('REDISTOGO_URL')
+                if not redis_url:
+                    raise SettingsError("You must supply redis_url or set the REDISTOGO_URL "
+                                        "environment variable.")
+            self.redis = redis.Redis.from_url(redis_url)
+
+        def get(self):
+            return self.redis.get('since_id')
+
+        def set(self, since_id):
+            return self.redis.set('since_id', since_id)
+
+        def delete(self):
+            return self.redis.delete('since_id')
 
 If you require more control over settings, you can subclass Settings:
 
@@ -101,14 +139,14 @@ than the provided settings.
 
     import sys
 
-    from twitter_bot import Runner, Settings
+    from twitter_bot import BotRunner, Settings
 
     if __name__ == '__main__':
         if len(sys.argv) != 2:
             print("You must specify a single command, either 'post_message' or 'reply_to_mentions'")
             result = 1
         else:
-            result = Runner().go(Settings(), sys.argv[1])
+            result = BotRunner().go(Settings(), sys.argv[1])
         sys.exit(result)
 
 Then call the script as follows:

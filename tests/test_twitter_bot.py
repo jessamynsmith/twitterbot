@@ -3,7 +3,8 @@ import unittest
 from mock import call, MagicMock, patch
 from twitter.api import TwitterHTTPError
 
-from twitter_bot.twitter_bot import Runner, Settings, SettingsError, TwitterBot
+from twitter_bot.settings import Settings, SettingsError
+from twitter_bot.twitter_bot import BotRunner, TwitterBot
 
 
 class MockSettings(Settings):
@@ -15,12 +16,22 @@ class MockSettings(Settings):
         self.CONSUMER_KEY = 'change_me'
         self.CONSUMER_SECRET = 'change_me'
         self.MESSAGE_PROVIDER = 'twitter_bot.messages.HelloWorldMessageProvider'
+        self.SINCE_ID_PROVIDER = 'twitter_bot.since_id.FileSystemProvider'
+
+
+class MockTwitterHTTPError(TwitterHTTPError):
+    def __init__(self, e):
+        self.e = e
+
+    def __str__(self):
+        return '{0}'.format(self.e)
 
 
 class TestTwitterBot(unittest.TestCase):
     MESSAGE = "You don't manage people, you manage things. You lead people. - Grace Hopper"
 
     def setUp(self):
+        self.maxDiff = None
         self.bot = TwitterBot(MockSettings())
 
     def test_constructor_invalid_settings(self):
@@ -34,6 +45,19 @@ class TestTwitterBot(unittest.TestCase):
             self.assertEqual("Must specify 'OAUTH_SECRET' in settings.py. When using default "
                              "settings, this value is loaded from the TWITTER_OAUTH_SECRET "
                              "environment variable.", '{0}'.format(e))
+
+    def test_constructor_invalid_settings_message_provider(self):
+        invalid_settings = MockSettings()
+        invalid_settings.MESSAGE_PROVIDER = None
+
+        try:
+            TwitterBot(settings=invalid_settings)
+            self.fail("Shouldn't be able to create TwitterBot with missing setting")
+        except SettingsError as e:
+            self.assertEqual("Must specify 'MESSAGE_PROVIDER' in settings.py. When using default "
+                             "settings, this value is loaded from the TWITTER_MESSAGE_PROVIDER "
+                             "environment variable. If TWITTER_MESSAGE_PROVIDER is not set, "
+                             "'messages.HelloWorldMessageProvider' will be used.", '{0}'.format(e))
 
     def test_get_error_no_hashtags(self):
         error = self.bot._get_error('An error has occurred', [])
@@ -128,10 +152,19 @@ class TestReplyToMentions(unittest.TestCase):
         self.bot = TwitterBot(MockSettings())
         self.bot.twitter.statuses = MagicMock()
         self.bot.send_message = MagicMock()
+        self.bot.since_id.delete()
 
     def tearDown(self):
-        if os.path.exists(self.bot.since_id_filename):
-            os.remove(self.bot.since_id_filename)
+        if os.path.exists(self.bot.since_id.filename):
+            os.remove(self.bot.since_id.filename)
+
+    def test_reply_to_mentions_retrieve_error(self):
+        self.bot.twitter.statuses.mentions_timeline.side_effect = MockTwitterHTTPError('Fail!')
+
+        result = self.bot.reply_to_mentions()
+
+        self.assertEqual(0, result)
+        self.bot.twitter.statuses.mentions_timeline.assert_called_with(count=200)
 
     def test_reply_to_mentions_no_mentions_no_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
@@ -143,7 +176,7 @@ class TestReplyToMentions(unittest.TestCase):
 
     def test_reply_to_mentions_no_mentions_with_since_id(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = []
-        self.bot._set_since_id('3')
+        self.bot.since_id.set('3')
 
         result = self.bot.reply_to_mentions()
 
@@ -151,7 +184,7 @@ class TestReplyToMentions(unittest.TestCase):
         self.bot.twitter.statuses.mentions_timeline.assert_called_with(count=200, since_id='3')
         self.assertEqual([], self.bot.send_message.mock_calls)
 
-    def test_reply_to_mentions_error(self):
+    def test_reply_to_mentions_post_error(self):
         self.bot.twitter.statuses.mentions_timeline.return_value = [
             {'id': '123',
              'user': {'screen_name': 'jessamyn'},
@@ -194,10 +227,10 @@ class TestReplyToMentions(unittest.TestCase):
         self.bot.send_message.assert_called_once_with("Hello World!")
 
 
-class TestRunner(unittest.TestCase):
+class TestBotRunner(unittest.TestCase):
     def setUp(self):
         self.settings = MockSettings()
-        self.runner = Runner()
+        self.runner = BotRunner()
 
     @patch('twitter_bot.twitter_bot.TwitterBot.post_message')
     def test_go_invalid_arg(self, mock_post):

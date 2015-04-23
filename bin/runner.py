@@ -2,7 +2,7 @@
 
 import sys
 
-from twitter_bot import Runner, Settings
+from twitter_bot import BotRunner, Settings
 
 
 if __name__ == '__main__':
@@ -10,5 +10,5 @@ if __name__ == '__main__':
         print("You must specify a single command, either 'post_message' or 'reply_to_mentions'")
         result = 1
     else:
-        result = Runner().go(Settings(), sys.argv[1])
+        result = BotRunner().go(Settings(), sys.argv[1])
     sys.exit(result)

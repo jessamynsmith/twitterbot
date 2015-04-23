@@ -1,8 +1,9 @@
 import logging
-import os
 
 from twitter import Twitter, TwitterHTTPError
 from twitter.oauth import OAuth
+
+from .settings import SettingsError
 
 
 logging.basicConfig(filename='logs/twitter_bot.log',
@@ -11,38 +12,11 @@ logging.basicConfig(filename='logs/twitter_bot.log',
                     level=logging.DEBUG)
 
 
-class Settings(object):
-    """ Settings for TwitterBot
-    You can use Settings as-is by setting environment variables, or subclass
-    Settings to override values
-    """
-    def __init__(self):
-        # Twitter settings (create a twitter account with oauth enabled to get values)
-        self.OAUTH_TOKEN = os.environ.get('TWITTER_OAUTH_TOKEN')
-        self.OAUTH_SECRET = os.environ.get('TWITTER_OAUTH_SECRET')
-        self.CONSUMER_KEY = os.environ.get('TWITTER_CONSUMER_KEY')
-        self.CONSUMER_SECRET = os.environ.get('TWITTER_CONSUMER_SECRET')
-
-        # Filename to be used to store since_id. This is used when retrieving mentions;
-        # only new mentions since since_id will be retrieved. If no value is specified,
-        # ALL available mentions will be retrieved
-        filename = os.environ.get('TWITTER_SINCE_ID_FILENAME', '.since_id.txt')
-        self.SINCE_ID_FILENAME = os.path.join(os.getcwd(), filename)
-
-        # Messages provider
-        self.MESSAGE_PROVIDER = os.environ.get('TWITTER_MESSAGE_PROVIDER',
-                                               'messages.HelloWorldMessageProvider')
-
-
 def get_class(module_name):
     module_parts = module_name.split('.')
     module = __import__('.'.join(module_parts[:-1]), fromlist=(module_parts[-1],))
     class_ = getattr(module, module_parts[-1])
     return class_()
-
-
-class SettingsError(Exception):
-    pass
 
 
 class TwitterBot(object):
@@ -56,7 +30,7 @@ class TwitterBot(object):
                 format_args = [required] * count
                 if required == 'MESSAGE_PROVIDER':
                     message += (" If TWITTER_MESSAGE_PROVIDER is not set, "
-                                "'messages.HelloWorldMessageProvider' will be used")
+                                "'messages.HelloWorldMessageProvider' will be used.")
                 raise SettingsError(message.format(*format_args))
 
     def __init__(self, settings):
@@ -83,24 +57,7 @@ class TwitterBot(object):
         self.twitter = Twitter(auth=auth)
 
         self.messages = get_class(settings.MESSAGE_PROVIDER)
-        self.since_id_filename = settings.SINCE_ID_FILENAME
-
-    def _get_since_id(self):
-        since_id = ''
-        try:
-            with open(self.since_id_filename) as since_id_file:
-                since_id = since_id_file.readline()
-        except IOError:
-            pass
-        logging.info("Retrieved since_id: %s" % since_id)
-        return since_id
-
-    def _set_since_id(self, since_id):
-        temp_filename = '{0}.tmp'.format(self.since_id_filename)
-        with open(temp_filename, 'w') as since_id_file:
-            since_id_file.write(since_id)
-        os.rename(temp_filename, self.since_id_filename)
-        logging.info("Stored since_id: %s" % since_id)
+        self.since_id = get_class(settings.SINCE_ID_PROVIDER)
 
     def _get_error(self, base_message, hashtags=tuple()):
         message = base_message
@@ -183,7 +140,7 @@ class TwitterBot(object):
         reply to the mention
         :return: Number of mentions processed
         """
-        since_id = self._get_since_id()
+        since_id = self.since_id.get()
 
         kwargs = {'count': 200}
         if since_id:
@@ -227,7 +184,7 @@ class TwitterBot(object):
                 tries += 1
 
             mentions_processed += 1
-            self._set_since_id('{0}'.format(mention_id))
+            self.since_id.set('{0}'.format(mention_id))
 
         return mentions_processed
 
@@ -239,7 +196,7 @@ class TwitterBot(object):
         return self.send_message(self.messages.create())
 
 
-class Runner(object):
+class BotRunner(object):
     """ Wrapper for running TwitterBot
     """
     def go(self, settings, command):
@@ -260,3 +217,6 @@ class Runner(object):
             print("Command must be either 'post_message' or 'reply_to_mentions'")
 
         return result
+
+
+__all__ = ["BotRunner", "TwitterBot"]

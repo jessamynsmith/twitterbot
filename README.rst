@@ -60,6 +60,9 @@ You can optionally set the following environment variables:
 - TWITTER_DRY_RUN
    If set to True, messages will be logged rather than actually posting them to Twitter.
 
+The underquotedbot project is a `working example`_ of using the twitterbot library to build a
+bot that is deployed to heroku and runs the twitter account `@the_underquoted`_.
+
 **Setting a Custom Message Provider**
 
 You can inject your own message provider by setting the following environment variable:
@@ -206,5 +209,7 @@ Run bot:
    :target: https://pypi.python.org/pypi/twitterbot
 .. |Downloads| image:: https://pypip.in/download/twitterbot/badge.svg
    :target: https://pypi.python.org/pypi/twitterbot
+.. _`working example`: https://github.com/jessamynsmith/underquotedbot
+.. _`@the_underquoted`: https://twitter.com/the_underquoted/
 .. _`obtained from your Twitter account`: https://dev.twitter.com/oauth/overview/application-owner-access-tokens/
 .. _twitter: https://pypi.python.org/pypi/twitter

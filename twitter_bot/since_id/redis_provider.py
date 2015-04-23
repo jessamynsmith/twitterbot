@@ -6,11 +6,11 @@ from twitter_bot.since_id.base_provider import BaseSinceIdProvider
 
 class RedisSinceIdProvider(BaseSinceIdProvider):
 
-    def __init__(self, redis_url=None):
+    def __init__(self, redis_url=''):
         super(RedisSinceIdProvider, self).__init__()
 
         if not redis_url:
-            redis_url = os.environ.get('REDIS_URL')
+            redis_url = os.environ.get('REDIS_URL', '')
         self.redis = Redis.from_url(redis_url)
 
     def get(self):

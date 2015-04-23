@@ -199,6 +199,7 @@ Verify all supported Python versions:
 
 ::
 
+    pip install tox
     tox
 
 Run bot:

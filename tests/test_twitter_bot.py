@@ -123,20 +123,22 @@ class TestTwitterBot(unittest.TestCase):
         self.assertEqual("... Hopper", messages[3])
 
     def test_tokenize_short_with_mention(self):
-        messages = self.bot.tokenize(self.MESSAGE, 80, ['@js'])
+        mention = '@jessamyn'
+        length = len(mention) + 1 + len(self.MESSAGE)
+        messages = self.bot.tokenize(self.MESSAGE, length, [mention])
 
         self.assertEqual(1, len(messages))
-        self.assertEqual('@js {0}'.format(self.MESSAGE), messages[0])
+        self.assertEqual('@jessamyn {0}'.format(self.MESSAGE), messages[0])
 
     def test_tokenize_much_too_long_with_mention(self):
-        messages = self.bot.tokenize(self.MESSAGE, 40, ['@js'])
+        messages = self.bot.tokenize(self.MESSAGE, 42, ['@jessamyn'])
 
         self.assertEqual(3, len(messages))
         for message in messages:
-            self.assertTrue(len(message) <= 40)
-        self.assertEqual("@js You don't manage people, you ...", messages[0])
-        self.assertEqual("@js ... manage things. You lead ...", messages[1])
-        self.assertEqual("@js ... people. - Grace Hopper", messages[2])
+            self.assertTrue(len(message) <= 42)
+        self.assertEqual("@jessamyn You don't manage people, you ...", messages[0])
+        self.assertEqual("@jessamyn ... manage things. You lead ...", messages[1])
+        self.assertEqual("@jessamyn ... people. - Grace Hopper", messages[2])
 
     def test_send_message_dry_run_no_mention(self):
         mock_statuses = MagicMock()

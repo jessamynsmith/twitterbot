@@ -75,30 +75,28 @@ class TwitterBot(object):
         :return:
         """
         mention_text = ''
+        mention_length = 0
         if mentions:
             mention_text = " ".join(mentions)
             message = '{0} {1}'.format(mention_text, message)
-        if len(message) < max_length:
+            mention_length = len(mention_text) + 1
+        if len(message) <= max_length:
             return [message]
 
-        # -4 for trailing ' ...'
-        max_length = max_length - 4
-        if mentions:
-            # adjust for prepending mentions to each message
-            max_length -= len(mention_text)
         tokens = message.split(' ')
         indices = []
         index = 1
         length = len(tokens[0])
-        for i in range(1, len(tokens)):
-            if length + 1 + len(tokens[i]) >= max_length:
+        while index < len(tokens):
+            # 1 for leading space, 4 for trailing " ..."
+            if length + 1 + len(tokens[index]) + 4 > max_length:
                 indices.append(index)
-                # 3 for leading "..."
-                length = 3 + len(mention_text) + len(tokens[i])
+                # 4 for leading "... "
+                length = 4 + mention_length + len(tokens[index])
             else:
-                length += 1 + len(tokens[i])
+                # 1 for leading space
+                length += 1 + len(tokens[index])
             index += 1
-
         indices.append(index)
 
         messages = [" ".join(tokens[0:indices[0]])]

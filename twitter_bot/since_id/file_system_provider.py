@@ -14,7 +14,9 @@ class FileSystemSinceIdProvider(BaseSinceIdProvider):
         since_id = ''
         try:
             with open(self.filename) as since_id_file:
-                since_id = since_id_file.readline()
+                # Disable branch coverage because there is a bug that the last line in
+                # a with block will always say it has partial coverage
+                since_id = since_id_file.readline()  # pragma: no branch
         except IOError:
             pass
         return since_id

@@ -7,7 +7,7 @@ from twitter_bot import messages, settings
 class TestMarkovChainMessageProvider(unittest.TestCase):
 
     def setUp(self):
-        self.provider = messages.MarkovChainMessageProvider("a b c d")
+        self.provider = messages.MarkovChainMessageProvider("a a b c d")
 
     @patch('os.environ.get')
     def test_constructor_empty_markov_text_path(self, mock_env_get):
@@ -27,9 +27,9 @@ class TestMarkovChainMessageProvider(unittest.TestCase):
         self.assertTrue(word in ["a", "b", "c", "d"])
 
     def test_a_random_word_with_args(self):
-        word = self.provider.a_random_word("a")
+        word = self.provider.a_random_word("b")
 
-        self.assertEqual("b", word)
+        self.assertEqual("c", word)
 
     def test_create_message(self):
         max_message_length = 140

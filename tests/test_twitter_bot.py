@@ -62,6 +62,7 @@ class TestTwitterBot(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
         self.bot = TwitterBot(MockSettings())
+        self.bot._screen_name = 'somebot'
 
     def test_constructor_invalid_settings(self):
         invalid_settings = MockSettings()
@@ -96,6 +97,14 @@ class TestTwitterBot(unittest.TestCase):
         self.assertTrue(isinstance(bot.messages, twitter_bot.messages.HelloWorldMessageProvider))
         self.assertTrue(isinstance(bot.since_id, twitter_bot.since_id.FileSystemSinceIdProvider))
 
+    def test_screen_name(self):
+        mock_account = MagicMock()
+        mock_account.verify_credentials = MagicMock(return_value={'screen_name': 'somebot'})
+        self.bot.twitter.account = mock_account
+        self.bot._screen_name = None
+
+        self.assertEqual('somebot', self.bot.screen_name)
+
     def test_tokenize_short(self):
         messages = self.bot.tokenize(self.MESSAGE, 80)
 
@@ -123,15 +132,15 @@ class TestTwitterBot(unittest.TestCase):
         self.assertEqual("... Hopper", messages[3])
 
     def test_tokenize_short_with_mention(self):
-        mention = '@jessamyn'
-        length = len(mention) + 1 + len(self.MESSAGE)
+        mention = 'jessamyn'
+        length = len(mention) + 1 + 1 + len(self.MESSAGE)
         messages = self.bot.tokenize(self.MESSAGE, length, [mention])
 
         self.assertEqual(1, len(messages))
         self.assertEqual('@jessamyn {0}'.format(self.MESSAGE), messages[0])
 
     def test_tokenize_much_too_long_with_mention(self):
-        messages = self.bot.tokenize(self.MESSAGE, 42, ['@jessamyn'])
+        messages = self.bot.tokenize(self.MESSAGE, 42, ['jessamyn'])
 
         self.assertEqual(3, len(messages))
         for message in messages:
@@ -139,6 +148,28 @@ class TestTwitterBot(unittest.TestCase):
         self.assertEqual("@jessamyn You don't manage people, you ...", messages[0])
         self.assertEqual("@jessamyn ... manage things. You lead ...", messages[1])
         self.assertEqual("@jessamyn ... people. - Grace Hopper", messages[2])
+
+    def test_get_reply_to_names_no_mentions(self):
+        mention = {
+            'user': {'screen_name': 'jessamyn'},
+            'entities': {'user_mentions': []}
+        }
+
+        names = self.bot.get_reply_to_names(mention)
+
+        self.assertEqual(['jessamyn'], names)
+
+    def test_get_reply_to_names_with_mentions(self):
+        mention = {
+            'user': {'screen_name': 'jessamyn'},
+            'entities': {'user_mentions': [{'screen_name': 'somebot'},
+                                           {'screen_name': 'jessamyn'},
+                                           {'screen_name': 'jill'}]}
+        }
+
+        names = self.bot.get_reply_to_names(mention)
+
+        self.assertEqual(['jessamyn', 'jill'], names)
 
     def test_send_message_dry_run_no_mention(self):
         mock_statuses = MagicMock()
@@ -199,6 +230,7 @@ class TestTwitterBot(unittest.TestCase):
 class TestReplyToMentions(unittest.TestCase):
     def setUp(self):
         self.bot = TwitterBot(MockSettings())
+        self.bot._screen_name = 'somebot'
         self.bot.twitter.statuses = MagicMock()
         self.bot.send_message = MagicMock()
         self.bot.since_id.delete()
@@ -246,9 +278,9 @@ class TestReplyToMentions(unittest.TestCase):
         self.assertEqual(1, result)
         self.bot.twitter.statuses.mentions_timeline.assert_called_once_with(count=200)
         self.assertEqual(11, len(self.bot.send_message.mock_calls))
-        expected_call = call('Hello World!', '123', ['@jessamyn'])
+        expected_call = call('Hello World!', '123', ['jessamyn'])
         self.assertEqual(expected_call, self.bot.send_message.mock_calls[0])
-        expected_call = call('No unique messages found.', '123', ['@jessamyn'])
+        expected_call = call('No unique messages found.', '123', ['jessamyn'])
         self.assertEqual(expected_call, self.bot.send_message.mock_calls[10])
 
     def test_reply_to_mentions_success(self):
@@ -265,7 +297,7 @@ class TestReplyToMentions(unittest.TestCase):
 
         self.assertEqual(1, result)
         self.bot.twitter.statuses.mentions_timeline.assert_called_once_with(count=200)
-        expected_calls = [call('Hello World!', '123', ['@jessamyn', '@jill'])]
+        expected_calls = [call('Hello World!', '123', ['jessamyn', 'jill'])]
         self.assertEqual(expected_calls, self.bot.send_message.mock_calls)
 
     def test_post_message(self):

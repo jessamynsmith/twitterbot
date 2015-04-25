@@ -60,10 +60,17 @@ class TwitterBot(object):
             settings.CONSUMER_SECRET
         )
         self.twitter = Twitter(auth=auth)
+        self._screen_name = None
 
         self.messages = get_class(settings.MESSAGE_PROVIDER)
         self.since_id = get_class(settings.SINCE_ID_PROVIDER)
         self.dry_run = settings.DRY_RUN
+
+    @property
+    def screen_name(self):
+        if not self._screen_name:
+            self._screen_name = self.twitter.account.verify_credentials()['screen_name']
+        return self._screen_name
 
     def tokenize(self, message, max_length, mentions=None):
         """
@@ -77,7 +84,8 @@ class TwitterBot(object):
         mention_text = ''
         mention_length = 0
         if mentions:
-            mention_text = " ".join(mentions)
+            formatted_mentions = ['@{0}'.format(mention) for mention in mentions]
+            mention_text = " ".join(formatted_mentions)
             message = '{0} {1}'.format(mention_text, message)
             mention_length = len(mention_text) + 1
         if len(message) <= max_length:
@@ -101,12 +109,12 @@ class TwitterBot(object):
 
         messages = [" ".join(tokens[0:indices[0]])]
         for i in range(1, len(indices)):
-            messages[i-1] += ' ...'
+            messages[i - 1] += ' ...'
             parts = []
             if mention_text:
                 parts.append(mention_text)
             parts.append("...")
-            parts.extend(tokens[indices[i-1]:indices[i]])
+            parts.extend(tokens[indices[i - 1]:indices[i]])
             messages.append(" ".join(parts))
 
         return messages
@@ -137,6 +145,19 @@ class TwitterBot(object):
                     code = e.response_data['errors'][0]['code']
         return code
 
+    def get_reply_to_names(self, mention):
+        """
+        Get a sorted list of unique usernames mentioned in the message, excluding the bot's own name
+        :param mention: JSON mention object from twitter
+        :return: list of usernames
+        """
+        mention_list = [user['screen_name'] for user in mention['entities']['user_mentions']]
+        mention_list.append(mention['user']['screen_name'])
+        reply_to_names = set(mention_list)
+        # Do not include bot's own name
+        reply_to_names.discard(self.screen_name)
+        return sorted(list(reply_to_names))
+
     def reply_to_mentions(self):
         """
         For every mention since since_id, create a message with the provider and use it to
@@ -161,15 +182,7 @@ class TwitterBot(object):
         # We want to process least recent to most recent, so that since_id is set properly
         for mention in reversed(mentions_list):
             mention_id = mention['id']
-
-            # Allow users to tweet messages at other users, but don't include self
-            mentions = set()
-            mentions.add('@{0}'.format(mention['user']['screen_name']))
-            for user in mention['entities']['user_mentions']:
-                name = user['screen_name']
-                if name != mention['in_reply_to_screen_name']:
-                    mentions.add('@{0}'.format(name))
-            mentions = sorted(list(mentions))
+            reply_to_names = self.get_reply_to_names(mention)
 
             error_code = self.DUPLICATE_CODE
             tries = 0
@@ -177,14 +190,14 @@ class TwitterBot(object):
             while error_code == self.DUPLICATE_CODE:
                 if tries > 10:
                     logging.error('Unable to post duplicate message to {0}: {1}'.format(
-                                  mentions, message))
+                                  reply_to_names, message))
                     break
                 elif tries == 10:
                     # Tried 10 times to post a message, but all were duplicates
                     message = 'No unique messages found.'
                 else:
                     message = self.messages.create(mention, self.MESSAGE_LENGTH)
-                error_code = self.send_message(message, mention_id, mentions)
+                error_code = self.send_message(message, mention_id, reply_to_names)
                 tries += 1
 
             mentions_processed += 1

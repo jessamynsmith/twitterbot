@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from .messages import BaseMessageProvider, HelloWorldMessageProvider, MarkovChainMessageProvider
 from .settings import Settings, SettingsError
 from .since_id import BaseSinceIdProvider, FileSystemSinceIdProvider

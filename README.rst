@@ -1,7 +1,7 @@
 TwitterBot
 ==========
 
-|Build Status| |Coverage Status| |PyPI Version| |Supported Versions| |Downloads|
+|Build Status| |Coverage Status| |PyPI Version| |Supported Python Versions| |Downloads|
 
 Easy-to-use TwitterBot that posts new messages and replies to mentions.
 Built on the popular twitter_ package. Please read Twitter's
@@ -222,16 +222,21 @@ Run bot:
     $ ./bin/runner.py reply_to_mentions  # Check twitter stream for mentions, and reply
     $ ./bin/runner.py post_message       # Post a message to twitter
 
-.. |Build Status| image:: https://circleci.com/gh/jessamynsmith/twitterbot.svg?style=shield
+.. |Build Status| image:: https://img.shields.io/circleci/project/github/jessamynsmith/twitterbot.svg
    :target: https://circleci.com/gh/jessamynsmith/twitterbot
-.. |Coverage Status| image:: https://coveralls.io/repos/jessamynsmith/twitterbot/badge.svg?branch=master
+   :alt: Build status
+.. |Coverage Status| image:: https://img.shields.io/coveralls/jessamynsmith/twitterbot.svg
    :target: https://coveralls.io/r/jessamynsmith/twitterbot?branch=master
-.. |PyPI Version| image:: https://pypip.in/version/twitterbot/badge.svg
+   :alt: Coverage status
+.. |PyPI Version| image:: https://img.shields.io/pypi/v/twitterbot.svg
    :target: https://pypi.python.org/pypi/twitterbot
-.. |Supported Versions| image:: https://pypip.in/py_versions/twitterbot/badge.svg
+   :alt: Latest PyPI version
+.. |Supported Python Versions| image:: https://img.shields.io/pypi/pyversions/twitterbot.svg
    :target: https://pypi.python.org/pypi/twitterbot
-.. |Downloads| image:: https://pypip.in/download/twitterbot/badge.svg
+   :alt: Supported Python versions
+.. |Downloads| image:: https://img.shields.io/pypi/dm/twitterbot.svg
    :target: https://pypi.python.org/pypi/twitterbot
+   :alt: Number of PyPI downloads
 .. _`Automation rules and best practices`: https://support.twitter.com/articles/76915-automation-rules-and-best-practices
 .. _`working example`: https://github.com/jessamynsmith/underquotedbot
 .. _`@the_underquoted`: https://twitter.com/the_underquoted/

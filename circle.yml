@@ -5,10 +5,3 @@ machine:
 test:
   override:
     - tox
-
-# Enable the following for heroku deployment from circleci
-#deployment:
-#    production:
-#      branch: master
-#      heroku:
-#        appname: <HEROKU_APP_NAME>

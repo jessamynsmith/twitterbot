@@ -231,24 +231,31 @@ Run bot:
     $ ./bin/runner.py post_message       # Post a message to twitter
 
 
-### Validating The Project Locally
+Validating The Project Locally
+------------------------------
 
 The CircleCI build can be validated locally, using the CircleCI CLI and docker. 
 
 First, install `Docker Desktop`_
 
-Then, install the CircleCI CLI, e.g. using homebrew on OSX:
+Install the CircleCI CLI, e.g. using homebrew on OSX:
 
-    brew install circleci
+::
+
+    $ brew install circleci
 
 Then, you can validate it by running this command in the terminal:
 
-    circleci config validate
+::
+
+    $ circleci config validate
 
 Once you know your config is valid, you can test it.
 The CLI allows you to run a single job from CircleCI on your desktop using docker:
 
-    circleci local execute --job build
+::
+
+    $ circleci local execute --job build
 
 For more information, see the [CircleCI docs](https://circleci.com/docs/2.0/local-cli/#validate-a-circleci-config)
 

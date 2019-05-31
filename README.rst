@@ -96,8 +96,16 @@ The default is to use the FileSystemSinceIdProvider. Using the file system will 
 on Heroku or any other host with an ephemeral file system. If you cannot rely on the file system,
 you MUST specify a different SinceIdProvider.
 
-TwitterBot comes with a Redis provider, which you can enable by installing redis and setting
-environment variables to configure the provider. By default, localhost will be used for redis.
+TwitterBot comes with a Redis provider. By default, localhost will be used for redis. To use it, 
+you must first install redis on your system. I recommend using homebrew on OSX:
+
+::
+
+    brew install redis
+    brew services start redis
+
+Once you have redis installed or available as a service, you can install the python redis package and set
+environment variables to configure the provider. 
 
 ::
 
@@ -222,6 +230,29 @@ Run bot:
     $ ./bin/runner.py reply_to_mentions  # Check twitter stream for mentions, and reply
     $ ./bin/runner.py post_message       # Post a message to twitter
 
+
+### Validating The Project Locally
+
+The CircleCI build can be validated locally, using the CircleCI CLI and docker. 
+
+First, install `Docker Desktop`_
+
+Then, install the CircleCI CLI, e.g. using homebrew on OSX:
+
+    brew install circleci
+
+Then, you can validate it by running this command in the terminal:
+
+    circleci config validate
+
+Once you know your config is valid, you can test it.
+The CLI allows you to run a single job from CircleCI on your desktop using docker:
+
+    circleci local execute --job build
+
+For more information, see the [CircleCI docs](https://circleci.com/docs/2.0/local-cli/#validate-a-circleci-config)
+
+
 .. |Build Status| image:: https://img.shields.io/circleci/project/github/jessamynsmith/twitterbot.svg
    :target: https://circleci.com/gh/jessamynsmith/twitterbot
    :alt: Build status
@@ -242,3 +273,4 @@ Run bot:
 .. _`@the_underquoted`: https://twitter.com/the_underquoted/
 .. _`obtained from your Twitter account`: https://dev.twitter.com/oauth/overview/application-owner-access-tokens/
 .. _twitter: https://pypi.python.org/pypi/twitter
+.. _`Docker Desktop`: https://www.docker.com/products/docker-desktop

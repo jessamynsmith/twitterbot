@@ -13,7 +13,7 @@ class TestRedisProvider(unittest.TestCase):
 
     @patch('os.environ.get')
     def test_constructor_empty_redis_env_var(self, mock_env_get):
-        mock_env_get.return_value = 'bogus'
+        mock_env_get.return_value = 'redis://'
 
         provider = RedisSinceIdProvider()
 

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import os.path as p
 
 
-version = "0.3.2"
+version = "0.3.3"
 
 with open(p.join(p.dirname(__file__), 'requirements', 'package.txt'), 'r') as reqs:
     install_requires = [line.strip() for line in reqs]
@@ -46,6 +46,8 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'License :: OSI Approved :: MIT License',
         "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries",
         "Topic :: Software Development",
